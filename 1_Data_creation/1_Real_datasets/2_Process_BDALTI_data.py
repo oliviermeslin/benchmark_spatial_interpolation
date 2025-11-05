@@ -83,20 +83,11 @@ for file in files:
         )
 
 # %%
-import matplotlib.pyplot as plt
-import numpy as np
-
-# Assuming df columns: x, y, value
-# Pivot to wide format to get 2D array for plotting
-pivot_table = df.to_pandas().pivot(index='y', columns='x', values='value')
-
-plt.figure()
-plt.imshow(pivot_table, origin='lower', cmap='terrain', aspect='auto')
-plt.colorbar(label='Raster value')
-plt.xlabel('X coordinate')
-plt.ylabel('Y coordinate')
-plt.title('Raster Plot from Pandas DataFrame')
-plt.show()
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
 
 
 # %%

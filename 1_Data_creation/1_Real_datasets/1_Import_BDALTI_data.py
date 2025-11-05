@@ -15,20 +15,6 @@ def download_file(url, local_path):
         f.write(response.content)
     print(f"Downloaded {url} to {local_path+url.rsplit('/', 1)[-1]}")
 
-# Function to extract files to a path
-def extract_files(archive_path, path, pattern = ""):
-    # Extract all .asc files
-    with py7zr.SevenZipFile(archive_path, mode='r') as archive:
-        archive.extract(
-            path=path, 
-            targets=[f for f in archive.namelist() if re.search(pattern, f)]
-        )
-
-# Function to convert ASC to GeoTIFF using GDAL
-def convert_asc_to_tiff(asc_path, tiff_path):
-    gdal.Translate(tiff_path, asc_path, format='GTiff')
-    print(f"Converted {asc_path} to {tiff_path}")
-
 # %%
 # URL of the BD ALTI page
 url = "https://geoservices.ign.fr/bdalti"
@@ -83,6 +69,14 @@ for file_url in asc_urls:
 
     print("Writing data to S3")
     os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_tif/BDALTI_{departement}.tif")
+
+# %%
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+# STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
+
 
 # %%
 # Map the altitude
