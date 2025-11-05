@@ -2,7 +2,7 @@
 MY_REPO=$(ls -d "/home/onyxia/work"/*/ | head -n 1 | xargs basename) 
 
 # Install the last version of GDAL
-curl -sL "https://url.geocarpentry.org/gdal-ubuntu" | bash
+# curl -sL "https://url.geocarpentry.org/gdal-ubuntu" | bash
 
 # Install dependencies
 cd $MY_REPO
