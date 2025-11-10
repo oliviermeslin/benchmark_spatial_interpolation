@@ -69,7 +69,7 @@ for file_url in asc_urls:
     gdal.Translate('RGEALTI.tif', 'out.vrt', format='gtiff')
 
     print("Writing data to S3")
-    os.system(f"mc cp RGEALTI.tif s3/oliviermeslin/RGEALTI/RGEALTI_{departement}.tif")
+    os.system(f"mc cp RGEALTI.tif s3/projet-benchmark-spatial-interpolation/RGEALTI/RGEALTI_{departement}.tif")
 
 # %%
 # Map the altitude

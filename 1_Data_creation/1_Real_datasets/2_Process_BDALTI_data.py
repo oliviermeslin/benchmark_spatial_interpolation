@@ -11,7 +11,7 @@ import re
 fs = s3fs.S3FileSystem(anon=False)  # set anon=True for public buckets
 
 # Define your S3 path
-path = 's3://oliviermeslin/BDALTI/BDALTI_tif/'
+path = 's3://projet-benchmark-spatial-interpolation/BDALTI/BDALTI_tif/'
 
 # List all files recursively
 files = fs.ls(path, detail=False)
@@ -78,7 +78,7 @@ for file in files:
     # Write to S3
     with fs.open(path, "wb") as f:
         df.write_parquet(
-            f"s3://oliviermeslin/BDALTI/BDALTI_parquet/departement={area}/data.parquet",
+            f"s3://projet-benchmark-spatial-interpolation/BDALTI/BDALTI_parquet/departement={area}/data.parquet",
             use_pyarrow=True
         )
 

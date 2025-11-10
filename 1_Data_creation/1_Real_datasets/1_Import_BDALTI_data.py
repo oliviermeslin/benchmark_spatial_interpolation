@@ -68,7 +68,7 @@ for file_url in asc_urls:
     gdal.Translate('BDALTI.tif', 'out.vrt', format='gtiff')
 
     print("Writing data to S3")
-    os.system(f"mc cp BDALTI.tif s3/oliviermeslin/BDALTI/BDALTI_tif/BDALTI_{departement}.tif")
+    os.system(f"mc cp BDALTI.tif s3/projet-benchmark-spatial-interpolation/BDALTI/BDALTI_tif/BDALTI_{departement}.tif")
 
 # %%
 # STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP STOP
