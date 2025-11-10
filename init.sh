@@ -21,6 +21,6 @@ cat > .vscode/settings.json << EOF
 {
   "python.defaultInterpreterPath": "./$MY_REPO/.venv/bin/python",
   "python.analysis.extraPaths": ["\${workspaceFolder}"],
-  "jupyter.notebookFileRoot": "\${workspaceFolder}/$MY_REPO
+  "jupyter.notebookFileRoot": "\${workspaceFolder}/$MY_REPO"
 }
 EOF
