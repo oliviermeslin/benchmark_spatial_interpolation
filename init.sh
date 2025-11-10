@@ -10,6 +10,17 @@ uv sync
 
 # Set VSCode's default interpreter path
 cd ..
+
+if [ -d .vscode ]; then rm -rf .vscode; fi
 mkdir -p .vscode
 
-echo '{"python.defaultInterpreterPath":"./'$MY_REPO'/.venv/bin/python"}' >> .vscode/settings.json
+echo ${workspaceFolder}
+
+# settings.json
+cat > .vscode/settings.json << EOF
+{
+  "python.defaultInterpreterPath": "./$MY_REPO/.venv/bin/python",
+  "python.analysis.extraPaths": ["\${workspaceFolder}"],
+  "jupyter.notebookFileRoot": "\${workspaceFolder}/$MY_REPO
+}
+EOF
