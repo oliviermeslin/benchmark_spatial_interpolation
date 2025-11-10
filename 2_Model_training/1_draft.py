@@ -9,6 +9,10 @@ import polars as pl
 from polars import col as c
 import numpy as np
 
+# Module to speed up scikit-learn
+from sklearnex import patch_sklearn
+# patch_sklearn()
+
 # Modules for machine learning
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.pipeline import Pipeline
