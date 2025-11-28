@@ -1,0 +1,26 @@
+{
+    "icesat_csv": "ICESAT/zlimburg/zuid_limburg.csv",
+    "features-path": "ICESAT/zlimburg/rf_features",
+    "interp": {
+        "resolution": 100,
+        "laplace": {
+            "outfile": "ICESAT/zlimburg/rf_features/interp_laplace.tif"
+        },
+        "nni": {
+            "outfile": "ICESAT/zlimburg/rf_features/interp_nni.tif"
+        },
+        "tin": {
+            "outfile": "ICESAT/zlimburg/rf_features/interp_tin.tif"
+        },
+        "idw": {
+            "outfile": "ICESAT/zlimburg/rf_features/interp_idw.tif",
+            "power": 2,
+            "n_neighbours": 10
+        }
+    },
+    "save-model": "ICESAT/zlimburg/zlimburg_model.joblib",
+
+    "results": {
+        "outfile": "ICESAT/zlimburg/results/zlimburg_pred.tif"
+    }
+}
