@@ -121,6 +121,12 @@ MODELS = [
 
 DATASETS = [
     {
+        "name": "bdalti",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
+        "sample": 50000000,
+        "transform": "log"
+    },
+    {
         "name": "bdalti_48",
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
         "filter_col": "departement",
@@ -137,7 +143,7 @@ METRICS = [
 
 # Pipeline settings
 COORD_ROTATION_AXIS = 23
-TEST_SIZE = 0.9
+TEST_SIZE = 0.5
 RANDOM_STATE = 123456
 
 
@@ -150,9 +156,14 @@ def load_dataset(dataset_config: dict) -> tuple:
     """Load and preprocess a dataset."""
     ldf = get_df_from_s3(dataset_config["path"])
 
-    # Apply filter if specified
+    # Apply filters if specified
     if "filter_col" in dataset_config:
         ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == dataset_config["filter_val"])
+    if "sample" in dataset_config:
+        if isinstance(dataset_config["sample"], float):
+            ldf = ldf.sample(fraction=dataset_config["sample"], seed=20230516)
+        elif isinstance(dataset_config["sample"], int):
+            ldf = ldf.sample(n=dataset_config["sample"], seed=20230516)
 
     # Remove NaN and negative values and select columns
     df = (
@@ -161,7 +172,6 @@ def load_dataset(dataset_config: dict) -> tuple:
         .filter(c.value > 0)
         .select("x", "y", "value")
         .collect()
-        .head(1000000)
     )
 
     # Separate target and features
