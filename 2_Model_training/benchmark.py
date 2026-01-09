@@ -47,10 +47,10 @@ MODELS = [
         "name": "random_forest",
         "class": RandomForestRegressor,
         "params": {
-            "n_estimators": 10,
+            "n_estimators": 50,
             "max_features": "sqrt",
-            "min_samples_split": 40,
-            "min_samples_leaf": 20,
+            "min_samples_split": 20,
+            "min_samples_leaf": 10,
             "random_state": 42,
             "n_jobs": -1,
             "verbose": 5
@@ -61,10 +61,10 @@ MODELS = [
         "class": RandomForestRegressor,
         "number_axis": 23,
         "params": {
-            "n_estimators": 10,
+            "n_estimators": 50,
             "max_features": "sqrt",
-            "min_samples_split": 40,
-            "min_samples_leaf": 20,
+            "min_samples_split": 20,
+            "min_samples_leaf": 10,
             "random_state": 42,
             "n_jobs": -1,
             "verbose": 5
@@ -159,14 +159,6 @@ def load_dataset(dataset_config: dict) -> tuple:
     # Apply filters if specified
     if "filter_col" in dataset_config:
         ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == dataset_config["filter_val"])
-    if "sample" in dataset_config:
-        if isinstance(dataset_config["sample"], float):
-            ldf = ldf.filter(
-                pl.linear_space(0, 1, pl.len())
-                .sample(fraction=1, with_replacement=True, shuffle=True) <= dataset_config["sample"]
-            )
-        elif isinstance(dataset_config["sample"], int):
-            ldf = ldf.sample(n=dataset_config["sample"], seed=20230516)
 
     # Remove NaN and negative values and select columns
     df = (
@@ -174,8 +166,15 @@ def load_dataset(dataset_config: dict) -> tuple:
         .filter(~c.value.is_nan())
         .filter(c.value > 0)
         .select("x", "y", "value")
-        .collect(streaming=True)
+        .collect()
     )
+
+    # Sampling
+    if "sample" in dataset_config:
+        if isinstance(dataset_config["sample"], float):
+            df = df.sample(fraction=dataset_config["sample"], seed=20230516)
+        elif isinstance(dataset_config["sample"], int):
+            df = df.sample(n=dataset_config["sample"], seed=20230516)
 
     # Separate target and features
     X = df.select("x", "y")
