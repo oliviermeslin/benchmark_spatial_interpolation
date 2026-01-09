@@ -156,7 +156,7 @@ def load_dataset(dataset_config: dict) -> tuple:
 
     # Remove NaN and negative values and select columns
     df = (
-        lf
+        ldf
         .filter(~c.value.is_nan())
         .filter(c.value > 0)
         .select("x", "y", "value")
