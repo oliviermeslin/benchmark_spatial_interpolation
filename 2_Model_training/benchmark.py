@@ -18,13 +18,14 @@ from pathlib import Path
 import numpy as np
 from polars import col as c
 from sklearn.ensemble import (
-    ExtraTreesRegressor,
     GradientBoostingRegressor,
     RandomForestRegressor,
 )
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
+
+import xgboost
 
 from utils.functions import AddCoordinatesRotation
 from utils.s3 import get_df_from_s3
