@@ -131,6 +131,7 @@ DATASETS = [
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
         "filter_col": "departement",
         "filter_val": "48",
+        "sample": 0.4,
         "transform": "log"
     },
 ]
