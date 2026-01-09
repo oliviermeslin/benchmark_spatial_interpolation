@@ -16,6 +16,7 @@ from datetime import datetime
 from pathlib import Path
 
 import numpy as np
+import polars as pl
 from polars import col as c
 from sklearn.ensemble import (
     GradientBoostingRegressor,
@@ -53,16 +54,6 @@ MODELS = [
         },
     },
     {
-        "name": "extra_trees",
-        "class": ExtraTreesRegressor,
-        "params": {
-            "n_estimators": 50,
-            "max_features": "sqrt",
-            "random_state": 42,
-            "n_jobs": -1,
-        },
-    },
-    {
         "name": "gradient_boosting",
         "class": GradientBoostingRegressor,
         "params": {
@@ -80,10 +71,9 @@ DATASETS = [
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
         "filter_col": "departement",
         "filter_val": "48",
+        "transform": "log"
     },
 ]
-
-
 
 METRICS = [
     {"name": "r2_score", "func": r2_score},
@@ -93,8 +83,8 @@ METRICS = [
 
 # Pipeline settings
 COORD_ROTATION_AXIS = 23
-TEST_SIZE = 0.5
-RANDOM_STATE = 123
+TEST_SIZE = 0.2
+RANDOM_STATE = 123456
 
 
 # %%
@@ -108,7 +98,7 @@ def load_dataset(dataset_config: dict) -> tuple:
 
     # Apply filter if specified
     if "filter_col" in dataset_config:
-        ldf = ldf.filter(c(dataset_config["filter_col"]) == dataset_config["filter_val"])
+        ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == dataset_config["filter_val"])
 
     # Remove NaN values and select columns
     df = (
@@ -118,8 +108,14 @@ def load_dataset(dataset_config: dict) -> tuple:
         .collect()
     )
 
+    # Separate target and features
     X = df.select("x", "y")
-    y = np.log(df.select("value").to_numpy().ravel())
+    y = df.select("value").to_numpy().ravel()
+
+    # Transform the target
+    if "transform" in dataset_config:
+        if dataset_config["transform"] == "log":
+            y = np.log(y)
 
     return train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
