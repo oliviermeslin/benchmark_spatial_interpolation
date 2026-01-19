@@ -126,7 +126,7 @@ MODELS = [
         "class": ObliqueRandomForestRegressor,
         "params": {
             "n_estimators": 50,
-            "max_features": 1.0, # Oblique trees often benefit from seeing all features per split
+            "max_features": 1.0,  # Oblique trees often benefit from seeing all features per split
             "random_state": 42,
             "n_jobs": -1,
         },
@@ -149,16 +149,30 @@ DATASETS = [
         "sample": 0.4,
         "transform": "log"
     },
+    {
+        "name": "rgealti",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+        "sample": 0.0005,
+        # "transform": "log" Because it makes it crash
+    },
+    {
+        "name": "rgealti_48",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+        "filter_col": "departement",
+        "filter_val": "48",
+        "sample": 0.04,
+        # "transform": "log" Because it makes it crash
+    },
     # --- Synthetic Datasets (New) ---
     {
         "name": "S-G-Sm",
         "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Sm.parquet",
-        "sample": 1.0, # Use all points for small sets
+        "sample": 1.0,  # Use all points for small sets
     },
     {
         "name": "S-G-Lg",
         "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet",
-        "sample": 0.1, # 1M points is heavy, sample 100k for faster benchmarking
+        "sample": 0.1,  # 1M points is heavy, sample 100k for faster benchmarking
     },
     {
         "name": "S-NG-Sm",
