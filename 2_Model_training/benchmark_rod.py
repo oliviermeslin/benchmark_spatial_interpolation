@@ -134,37 +134,41 @@ MODELS = [
 ]
 
 DATASETS = [
-    # --- SYNTHETIC DATASETS ---
-    {"name": "S-G-Sm",  "path": "s3://.../S-G-Sm.parquet",  "sample": 1.0, "type": "synthetic"},
-    {"name": "S-G-Lg",  "path": "s3://.../S-G-Lg.parquet",  "sample": 0.1, "type": "synthetic"},
-    {"name": "S-NG-Sm", "path": "s3://.../S-NG-Sm.parquet", "sample": 1.0, "type": "synthetic"},
-    {"name": "S-NG-Lg", "path": "s3://.../S-NG-Lg.parquet", "sample": 0.1, "type": "synthetic"},
-
-    # --- REAL DATASETS (Using BDALTI 25m for Small, RGEALTI 5m for Large) ---
-    
-    # 5. Real - Grid - Small (Full department at 25m)
+    # --- Real Datasets ---
     {
-        "name": "R-G-Sm", 
+        "name": "bdalti",
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48", "sample": 1.0, "transform": "log"
+        "sample": 0.005,
+        "transform": "log"
     },
-    # 6. Real - Grid - Large (Full department at 5m - Very Dense)
     {
-        "name": "R-G-Lg", 
-        "path": "s3://projet-benchmark-spatial-interpolation/RGEALTI/RGEALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48", "sample": 0.5, "transform": "log"
-    },
-    # 7. Real - Non-Grid - Small (Sparse random points from 25m)
-    {
-        "name": "R-NG-Sm", 
+        "name": "bdalti_48",
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48", "sample": 5000, "transform": "log"
+        "filter_col": "departement",
+        "filter_val": "48",
+        "sample": 0.4,
+        "transform": "log"
     },
-    # 8. Real - Non-Grid - Large (Scattered random points from 5m)
+    # --- Synthetic Datasets (New) ---
     {
-        "name": "R-NG-Lg", 
-        "path": "s3://projet-benchmark-spatial-interpolation/RGEALTI/RGEALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48", "sample": 200000, "transform": "log"
+        "name": "S-G-Sm",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Sm.parquet",
+        "sample": 1.0, # Use all points for small sets
+    },
+    {
+        "name": "S-G-Lg",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet",
+        "sample": 0.1, # 1M points is heavy, sample 100k for faster benchmarking
+    },
+    {
+        "name": "S-NG-Sm",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Sm.parquet",
+        "sample": 1.0,
+    },
+    {
+        "name": "S-NG-Lg",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet",
+        "sample": 0.1,
     },
 ]
 
@@ -186,48 +190,47 @@ RANDOM_STATE = 123456
 # =============================================================================
 
 def load_dataset(dataset_config: dict) -> tuple:
-    """Load and preprocess a dataset based on size, grid/non-grid, and nature."""
-    print(f"  Fetching data from: {dataset_config['path']}")
+    """Load and preprocess a dataset."""
     ldf = get_df_from_s3(dataset_config["path"])
 
-    # Standardize column names
+    # FIX: Use collect_schema() to avoid PerformanceWarning
     columns = ldf.collect_schema().names()
-    if "val" in columns and "value" not in columns:
+    if "val" in columns:
         ldf = ldf.rename({"val": "value"})
 
-    # Apply filters (e.g., selecting a specific department)
+    # Apply filters if specified
     if "filter_col" in dataset_config:
         ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == dataset_config["filter_val"])
 
-    # Clean data: Remove NaNs and non-positive values for log transform safety
+    # FIX: Remove NaN AND values <= 0 to ensure log transform safety
+    # We do this here so the sampling and splitting see clean data
     ldf = ldf.filter(
-        (pl.col("value").is_not_null()) & 
-        (~pl.col("value").is_nan()) & 
-        (pl.col("value") > 0)
+        (~pl.col("value").is_nan()) & (pl.col("value") > 0)
     )
 
-    # Collect into memory for sampling/splitting
-    df = ldf.select("x", "y", "value").collect()
+    df = (
+        ldf
+        .select("x", "y", "value")
+        .collect()
+    )
 
-    # Handle Sampling (Supports both % fraction and absolute N points)
-    sample_val = dataset_config.get("sample", 1.0)
-    if isinstance(sample_val, float) and sample_val < 1.0:
-        df = df.sample(fraction=sample_val, seed=RANDOM_STATE)
-    elif isinstance(sample_val, int):
-        # Ensure we don't try to sample more points than exist
-        n_samples = min(sample_val, df.height)
-        df = df.sample(n=n_samples, seed=RANDOM_STATE)
+    # Sampling
+    if "sample" in dataset_config:
+        if isinstance(dataset_config["sample"], float):
+            df = df.sample(fraction=dataset_config["sample"], seed=20230516)
+        elif isinstance(dataset_config["sample"], int):
+            df = df.sample(n=dataset_config["sample"], seed=20230516)
 
     # Separate target and features
     X = df.select("x", "y")
     y = df.select("value").to_numpy().ravel()
 
-    # Transform the target if requested
+    # Transform the target
     if dataset_config.get("transform") == "log":
+        print("The target is log-transformed")
+        # Since we filtered for value > 0, this is now safe
         y = np.log(y)
 
-    print(f"  Dataset loaded: {len(y)} points.")
-    
     return train_test_split(X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE)
 
 
