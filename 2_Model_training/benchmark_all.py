@@ -3,7 +3,7 @@
 Simple benchmark script for testing sklearn models on spatial interpolation datasets.
 
 Usage:
-    uv run python 2_Model_training/benchmark_rod.py
+    uv run python 2_Model_training/benchmark_all.py
 
 Extensibility:
     - Add models: append to MODELS list
@@ -35,6 +35,10 @@ import xgboost
 from utils.kriging_wrapper import PyKrigeWrapper
 
 from utils.gam_wrapper import PyGAMWrapper
+
+import sys
+sys.path.append('geoRF')
+from geoRF import GeoRFRegressor
 
 from utils.functions import AddCoordinatesRotation, ConvertToPandas
 from utils.s3 import get_df_from_s3
@@ -138,41 +142,48 @@ MODELS = [
 #        },
 #    },
     {
-        "name": "kriging",
-        "class": PyKrigeWrapper,
+        "name": "geoRF",
+        "class": GeoRFRegressor,
         "number_axis": 23,
         "params": {
-            "variogram_model": "spherical",  # Opzioni: 'linear', 'power', 'gaussian', 'spherical', 'exponential', 'hole-effect'
-            "nlags": 6,                      # Numero di lag per variogramma
-            "weight": False,                 # Usa pesi per variogramma
-            "anisotropy_scaling": 1.0,       # Fattore di scaling anisotropia
-            "anisotropy_angle": 0.0,         # Angolo anisotropia (gradi)
-            "enable_plotting": False,        # Abilita plotting variogramma
-            "verbose": False,                # Stampa info durante fitting
-            "exact_values": True,            # Forza valori esatti ai punti training
-            "pseudo_inv": False,             # Usa pseudo-inversa
-            "coordinates_type": "euclidean", # Tipo coordinate: 'euclidean' o 'geographic'
+            "n_estimators": 20,         # Number of trees
+            "max_depth": 10,            # max depth
+            "min_samples_split": 20,    # Min campioni per split
+            "max_samples": 0.5,         # Dimensione bootstrap
+            "max_features": 2,          # Features per split
+            "oob_score": False,         # Out-of-bag validation
+            "n_jobs": 1,                # Parallelizzazione
+            "random_state": 42,         # Seed per riproducibilità
         },
         "search_space":{},
     },
     {
-        "name": "gam",
+        "name": "kriging_tuned",
+        "class": PyKrigeWrapper,
+        "number_axis": 23,
+        "params": {
+            "coordinates_type": "euclidean",            
+        },
+        "search_space": {
+            "ml_model__variogram_model": ["spherical", "exponential", "gaussian", "linear"],
+            "ml_model__nlags": [4, 6, 10, 15],
+            "ml_model__weight": [True, False],
+            "ml_model__anisotropy_scaling": [1.0, 1.5, 2.0],
+        },
+    },
+    {
+        "name": "gam_tuned",
         "class": PyGAMWrapper,
         "number_axis": 23,
         "params": {
-            "n_splines": 25,             # Numero di splines (10-50)
-            "lam": 0.6,                  # Regolarizzazione (0.001-100)
-            "max_iter": 100,             # Max iterazioni
-            "tol": 1e-4,                 # Tolleranza convergenza
-            "use_tensor_product": True,  # Tensor product per dati spaziali
-            "spline_order": 3,           # Ordine splines (2-4)
-            "penalties": "auto",         # Tipo penalità
-            "fit_intercept": True,       # Fitta intercetta
-            "verbose": False,            # Stampa info
         },
-        "search_space":{},
-    },
-
+        "search_space": {
+            "ml_model__n_splines": [15, 25, 35, 50],
+            "ml_model__lam": [0.1, 0.6, 2.0, 10.0],
+            "ml_model__spline_order": [2, 3, 4],
+            "ml_model__use_tensor_product": [True, False],
+        },
+    }
 ]
 
 SIZE_SMALL = 5_000
@@ -311,11 +322,23 @@ def load_dataset(dataset_config: dict) -> tuple:
 
 
 def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
-    """Train with Hyperparameter Optimization and evaluate."""
+    """Train and evaluate models, handling GeoRF, CV search, and direct fits."""
+    
+    # 1. Setup Common Components
+    # We use .copy() to avoid modifying the original config if we need to pop keys
+    params = model_config.get("params", {}).copy()
+    
+    # Safety: Kriging/GAM wrappers often don't support n_jobs in __init__
+    # If it causes issues, you can explicitly pop it here:
+    # params.pop("n_jobs", None) 
 
-    # 1. Basic Setup
-    model_instance = model_config["class"](**model_config["params"])
+    model_instance = model_config["class"](**params)
     number_axis = model_config.get("number_axis", 1)
+    
+    # Identifiers for logic branches
+    is_georf = "geoRF" in model_config["name"]
+    search_space = model_config.get("search_space", {})
+    has_search_space = len(search_space) > 0
 
     # 2. Build Pipeline
     pipeline = Pipeline([
@@ -327,25 +350,47 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
         ("ml_model", model_instance),
     ])
 
-    # 3. Setup Random Search
-    # This treats the entire pipeline as the estimator
-    search = RandomizedSearchCV(
-        estimator=pipeline,
-        param_distributions=model_config["search_space"],
-        n_iter=N_ITER_SEARCH,
-        cv=CV_FOLDS,
-        scoring='r2',
-        verbose=1,
-        n_jobs=-1  # Parallelize the CV folds
-    )
-
-    # 4. Fit & Time
     start = time.perf_counter()
-    search.fit(X_train, y_train)
+
+    # =========================================================================
+    # BRANCH 1: GeoRF (Direct fit, special parameters)
+    # =========================================================================
+    if is_georf:
+        print(f"    [GeoRF Mode] Skipping CV, fitting directly...")
+        pipeline.fit(X_train, y_train, ml_model__gens="da")
+        best_pipeline = pipeline
+        best_params = params
+
+    # =========================================================================
+    # BRANCH 2: Models with Search Space (RandomizedSearchCV)
+    # =========================================================================
+    elif has_search_space:
+        print(f"    [Search Mode] Running RandomizedSearchCV...")
+        search = RandomizedSearchCV(
+            estimator=pipeline,
+            param_distributions=search_space,
+            n_iter=N_ITER_SEARCH,
+            cv=CV_FOLDS,
+            scoring='r2',
+            verbose=1,
+            n_jobs=-1  # Parallelize folds
+        )
+        search.fit(X_train, y_train)
+        best_pipeline = search.best_estimator_
+        best_params = search.best_params_
+
+    # =========================================================================
+    # BRANCH 3: Standard Fit (No CV, no special params)
+    # =========================================================================
+    else:
+        print(f"    [Standard Mode] Fitting pipeline directly...")
+        pipeline.fit(X_train, y_train)
+        best_pipeline = pipeline
+        best_params = params
+
     training_time = time.perf_counter() - start
 
-    # 5. Evaluate Best Model
-    best_pipeline = search.best_estimator_
+    # 3. Evaluate
     y_pred = best_pipeline.predict(X_test)
 
     # Compute metrics
@@ -353,27 +398,72 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
 
     return {
         "model": model_config["name"],
-        "best_params": search.best_params_,  # Save what was actually chosen
+        "best_params": best_params,
         "training_time": round(training_time, 2),
         **metrics,
     }
 
 
 def run_benchmark(models: list, datasets: list) -> dict:
-    """Run all model/dataset combinations."""
+    """Run all model/dataset combinations with error handling."""
     results = []
 
     for dataset in datasets:
-        print(f"Loading dataset: {dataset['name']}")
-        X_train, X_test, y_train, y_test = load_dataset(dataset)
-        print(f"  Train: {len(y_train)}, Test: {len(y_test)}")
+        print(f"\n{'='*50}\nLoading dataset: {dataset['name']}\n{'='*50}")
+        try:
+            X_train, X_test, y_train, y_test = load_dataset(dataset)
+            print(f"  Train: {len(y_train)}, Test: {len(y_test)}")
+        except Exception as e:
+            print(f"  FAILED to load dataset {dataset['name']}: {e}")
+            continue
 
         for model in models:
             print(f"  Training: {model['name']}")
-            result = run_model(model, X_train, X_test, y_train, y_test)
-            result["dataset"] = dataset["name"]
-            results.append(result)
-            print(f"    R2: {result['r2_score']:.4f}, Time: {result['training_time']}s")
+            try:
+                result = run_model(model, X_train, X_test, y_train, y_test)
+                result["dataset"] = dataset["name"]
+                results.append(result)
+                print(f"    R2: {result['r2_score']:.4f}, Time: {result['training_time']}s")
+            except Exception as e:
+                # This ensures one model failing doesn't stop the whole benchmark
+                print(f"    ERROR training {model['name']}: {type(e).__name__}: {e}")
+                continue
+
+    return {
+        "timestamp": datetime.utcnow().isoformat(),
+        "config": {
+            "coord_rotation_axis": COORD_ROTATION_AXIS,
+            "test_size": TEST_SIZE,
+            "random_state": RANDOM_STATE,
+        },
+        "results": results,
+    }
+
+
+def run_benchmark(models: list, datasets: list) -> dict:
+    """Run all model/dataset combinations with error handling."""
+    results = []
+
+    for dataset in datasets:
+        print(f"\n{'='*50}\nLoading dataset: {dataset['name']}\n{'='*50}")
+        try:
+            X_train, X_test, y_train, y_test = load_dataset(dataset)
+            print(f"  Train: {len(y_train)}, Test: {len(y_test)}")
+        except Exception as e:
+            print(f"  FAILED to load dataset {dataset['name']}: {e}")
+            continue
+
+        for model in models:
+            print(f"  Training: {model['name']}")
+            try:
+                result = run_model(model, X_train, X_test, y_train, y_test)
+                result["dataset"] = dataset["name"]
+                results.append(result)
+                print(f"    R2: {result['r2_score']:.4f}, Time: {result['training_time']}s")
+            except Exception as e:
+                # This ensures one model failing doesn't stop the whole benchmark
+                print(f"    ERROR training {model['name']}: {type(e).__name__}: {e}")
+                continue
 
     return {
         "timestamp": datetime.utcnow().isoformat(),
