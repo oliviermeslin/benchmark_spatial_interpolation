@@ -32,6 +32,10 @@ from sklearn.model_selection import RandomizedSearchCV
 
 import xgboost
 
+from utils.kriging_wrapper import PyKrigeWrapper
+
+from utils.gam_wrapper import PyGAMWrapper
+
 from utils.functions import AddCoordinatesRotation, ConvertToPandas
 from utils.s3 import get_df_from_s3
 from utils.patch_treeple import apply_treeple_patch
@@ -46,43 +50,43 @@ from treeple.ensemble import ObliqueRandomForestRegressor
 # =============================================================================
 
 MODELS = [
-    {
-        "name": "random_forest",
-        "class": RandomForestRegressor,
-        "params": {"n_jobs": -1, "random_state": 42},
-        "search_space": {
-            "ml_model__n_estimators": [50, 100, 200],
-            "ml_model__max_features": ["sqrt", 1.0],
-            "ml_model__min_samples_leaf": [5, 10, 20],
-        },
-    },
-    {
-        "name": "random_forest_cr",
-        "class": RandomForestRegressor,
-        "number_axis": 23,
-        "params": {"n_jobs": -1, "random_state": 42},
-        "search_space": {
-            "ml_model__n_estimators": [50, 100, 200],
-            "ml_model__max_features": ["sqrt", 1.0],
-            "ml_model__min_samples_leaf": [5, 10, 20],
-        },
-    },
-    {
-        "name": "xgboost",
-        "class": xgboost.XGBRegressor,
-        "params": {
-            "n_jobs": -1,
-            "random_state": 42,
-            "subsample": 1,
-            "colsample_bytree": 1,
-            "objective": "reg:squarederror",
-            },
-        "search_space": {
-            "ml_model__max_depth": [6, 10, 15],
-            "ml_model__learning_rate": [0.05, 0.1, 0.3],
-            "ml_model__n_estimators": [100, 200],
-            "ml_model__max_bin": [1000, 2000, 5000]
-        },
+#    {
+#        "name": "random_forest",
+#        "class": RandomForestRegressor,
+#        "params": {"n_jobs": -1, "random_state": 42},
+#        "search_space": {
+#            "ml_model__n_estimators": [50, 100, 200],
+#            "ml_model__max_features": ["sqrt", 1.0],
+#            "ml_model__min_samples_leaf": [5, 10, 20],
+#        },
+#    },
+#    {
+#        "name": "random_forest_cr",
+#        "class": RandomForestRegressor,
+#        "number_axis": 23,
+#        "params": {"n_jobs": -1, "random_state": 42},
+#        "search_space": {
+#            "ml_model__n_estimators": [50, 100, 200],
+#            "ml_model__max_features": ["sqrt", 1.0],
+#            "ml_model__min_samples_leaf": [5, 10, 20],
+#        },
+#    },
+#    {
+#        "name": "xgboost",
+#        "class": xgboost.XGBRegressor,
+#        "params": {
+#            "n_jobs": -1,
+#            "random_state": 42,
+#            "subsample": 1,
+#            "colsample_bytree": 1,
+#            "objective": "reg:squarederror",
+#            },
+#        "search_space": {
+#            "ml_model__max_depth": [6, 10, 15],
+#            "ml_model__learning_rate": [0.05, 0.1, 0.3],
+#            "ml_model__n_estimators": [100, 200],
+#            "ml_model__max_bin": [1000, 2000, 5000]
+#        },
         # "callbacks": [
         #     {
         #         "callback": xgboost.callback.EvaluationMonitor(period=5),
@@ -91,24 +95,24 @@ MODELS = [
         #         }
         #     }
         # ]
-    },
-    {
-        "name": "xgboost_cr",
-        "class": xgboost.XGBRegressor,
-        "number_axis": 23,
-        "params": {
-            "n_jobs": -1,
-            "random_state": 42,
-            "subsample": 1,
-            "colsample_bytree": 1,
-            "objective": "reg:squarederror",
-            },
-        "search_space": {
-            "ml_model__max_depth": [6, 10, 15],
-            "ml_model__learning_rate": [0.05, 0.1, 0.3],
-            "ml_model__n_estimators": [100, 200],
-            "ml_model__max_bin": [256, 1000, 2000]
-        },
+#    },
+#    {
+#        "name": "xgboost_cr",
+#        "class": xgboost.XGBRegressor,
+#        "number_axis": 23,
+#        "params": {
+#            "n_jobs": -1,
+#            "random_state": 42,
+#            "subsample": 1,
+#            "colsample_bytree": 1,
+#            "objective": "reg:squarederror",
+#            },
+#        "search_space": {
+#            "ml_model__max_depth": [6, 10, 15],
+#            "ml_model__learning_rate": [0.05, 0.1, 0.3],
+#            "ml_model__n_estimators": [100, 200],
+#            "ml_model__max_bin": [256, 1000, 2000]
+#        },
         # "callbacks": [
         #     {
         #         "callback": xgboost.callback.EvaluationMonitor(period=5),
@@ -117,7 +121,7 @@ MODELS = [
         #         }
         #     }
         # ]
-    },
+#    },
 #    {
 #        "name": "oblique_random_forest",
 #        "class": ObliqueRandomForestRegressor,
@@ -133,6 +137,42 @@ MODELS = [
 #            "ml_model__min_samples_leaf": [1, 5, 10],
 #        },
 #    },
+    {
+        "name": "kriging",
+        "class": PyKrigeWrapper,
+        "number_axis": 23,
+        "params": {
+            "variogram_model": "spherical",  # Opzioni: 'linear', 'power', 'gaussian', 'spherical', 'exponential', 'hole-effect'
+            "nlags": 6,                      # Numero di lag per variogramma
+            "weight": False,                 # Usa pesi per variogramma
+            "anisotropy_scaling": 1.0,       # Fattore di scaling anisotropia
+            "anisotropy_angle": 0.0,         # Angolo anisotropia (gradi)
+            "enable_plotting": False,        # Abilita plotting variogramma
+            "verbose": False,                # Stampa info durante fitting
+            "exact_values": True,            # Forza valori esatti ai punti training
+            "pseudo_inv": False,             # Usa pseudo-inversa
+            "coordinates_type": "euclidean", # Tipo coordinate: 'euclidean' o 'geographic'
+        },
+        "search_space":{},
+    },
+    {
+        "name": "gam",
+        "class": PyGAMWrapper,
+        "number_axis": 23,
+        "params": {
+            "n_splines": 25,             # Numero di splines (10-50)
+            "lam": 0.6,                  # Regolarizzazione (0.001-100)
+            "max_iter": 100,             # Max iterazioni
+            "tol": 1e-4,                 # Tolleranza convergenza
+            "use_tensor_product": True,  # Tensor product per dati spaziali
+            "spline_order": 3,           # Ordine splines (2-4)
+            "penalties": "auto",         # Tipo penalità
+            "fit_intercept": True,       # Fitta intercetta
+            "verbose": False,            # Stampa info
+        },
+        "search_space":{},
+    },
+
 ]
 
 SIZE_SMALL = 5_000
@@ -153,20 +193,20 @@ DATASETS = [
 #        "target_n": SIZE_SMALL,
 #        "transform": "log"
 #        },
-    {
-        "name": "rgealti",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-        "target_n": SIZE_LARGE,
-        "transform": "log"
-        },
-    {
-        "name": "rgealti_48",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-        "filter_col": "departement",
-        "filter_val": "48",
-        "target_n": SIZE_SMALL,
-        "transform": "log"
-        },
+#    {
+#        "name": "rgealti",
+#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+#        "target_n": SIZE_LARGE,
+#        "transform": "log"
+#        },
+#    {
+#        "name": "rgealti_48",
+#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+#        "filter_col": "departement",
+#        "filter_val": "48",
+#        "target_n": SIZE_SMALL,
+#        "transform": "log"
+#        },
     # --- Synthetic Datasets (New) ---
     {
         "name": "S-G-Sm",
