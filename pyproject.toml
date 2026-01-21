@@ -9,6 +9,7 @@ dependencies = [
     "gdal[numpy]==3.8.4",
     "geostatspy>=0.0.79",
     "gstools>=1.7.0",
+    "libpysal>=4.14.1",
     "lightgbm>=4.6.0",
     "matplotlib>=3.10.7",
     "mlflow>=3.6.0",
