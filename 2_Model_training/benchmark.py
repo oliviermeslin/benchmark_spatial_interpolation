@@ -372,7 +372,7 @@ def run_benchmark(models: list, datasets: list) -> dict:
 def save_results(results: dict, output_dir: str = "results") -> Path:
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
-    filepath = output_path / f"benchmark_no_cv_{datetime.utcnow().strftime('%Y%m%d')}.json"
+    filepath = output_path / "benchmark_results.json"
     with open(filepath, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to: {filepath}")

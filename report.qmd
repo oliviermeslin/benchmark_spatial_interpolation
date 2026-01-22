@@ -104,7 +104,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Load the benchmark results
-file_path = "/home/onyxia/work/benchmark_spatial_interpolation/results/benchmark_no_cv_20260122.json"
+file_path = "/home/onyxia/work/benchmark_spatial_interpolation/results/benchmark_results.json"
 
 with open(file_path, 'r') as f:
     data = json.load(f)
