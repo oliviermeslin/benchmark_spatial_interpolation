@@ -14,35 +14,26 @@ import time
 import gc
 from datetime import datetime
 from pathlib import Path
-
-import numpy as np
 import polars as pl
-from polars import col as c
-
-# Apply Intel sklearn acceleration
 from sklearnex import patch_sklearn
 patch_sklearn()
-
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_error
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
-from sklearn.neighbors import KNeighborsRegressor  
-
+from sklearn.neighbors import KNeighborsRegressor
 import xgboost
 from utils.migbt import SklearnMIXGBooster
 from utils.kriging_wrapper import PyKrigeWrapper
 from utils.gam_wrapper import PyGAMWrapper
-
 import sys
 sys.path.append('geoRF')
 from geoRF import GeoRFRegressor
-from utils.idw import IDWRegressor 
+from utils.idw import IDWRegressor
 from utils.functions import AddCoordinatesRotation, ConvertToPandas
 from utils.s3 import get_df_from_s3
 from utils.patch_treeple import apply_treeple_patch
 apply_treeple_patch()
-
 from treeple.ensemble import ObliqueRandomForestRegressor
 
 # =============================================================================
@@ -56,7 +47,13 @@ MODELS = [
         "name": "random_forest",
         "class": RandomForestRegressor,
         "number_axis": 1,
-        "params": {"n_estimators": 250, "max_features": "sqrt", "min_samples_leaf": 5, "n_jobs": -1, "random_state": 42},
+        "params": {
+            "n_estimators": 250,
+            "max_features": "sqrt",
+            "min_samples_leaf": 5,
+            "n_jobs": -1,
+            "random_state": 42
+            },
     },
     {
         "name": "random_forest_cr",
@@ -182,34 +179,34 @@ SIZE_SMALL = 5_000
 SIZE_LARGE = 100_000
 DATASETS = [
     # --- Real Datasets ---
-#    {
-#        "name": "bdalti",
-#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-#        "target_n": SIZE_LARGE,
-#        "transform": "log"
-#        },
-#    {
-#        "name": "bdalti_48",
-#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-#        "filter_col": "departement",
-#        "filter_val": "48",
-#        "target_n": SIZE_SMALL,
-#        "transform": "log"
-#        },
-#    {
-#        "name": "rgealti",
-#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-#        "target_n": SIZE_LARGE,
-#        "transform": "log"
-#        },
-#    {
-#        "name": "rgealti_48",
-#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-#        "filter_col": "departement",
-#        "filter_val": "48",
-#        "target_n": SIZE_SMALL,
-#        "transform": "log"
-#        },
+    {
+        "name": "bdalti",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
+        "target_n": SIZE_LARGE,
+        "transform": "log"
+        },
+    {
+        "name": "bdalti_48",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
+        "filter_col": "departement",
+        "filter_val": "48",
+        "target_n": SIZE_SMALL,
+        "transform": "log"
+        },
+    {
+        "name": "rgealti",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+        "target_n": SIZE_LARGE,
+        "transform": "log"
+        },
+    {
+        "name": "rgealti_48",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+        "filter_col": "departement",
+        "filter_val": "48",
+        "target_n": SIZE_SMALL,
+        "transform": "log"
+        },
     # --- Synthetic Datasets (New) ---
     {"name": "S-G-Sm", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Sm.parquet", "target_n": SIZE_SMALL},
     {"name": "S-G-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet", "target_n": SIZE_LARGE},
@@ -250,7 +247,7 @@ def load_dataset(dataset_config: dict) -> tuple:
 
     # 2. Initial Cleaning (Remove nulls and non-positive values for log)
     ldf = ldf.filter(
-        (pl.col("value").is_not_null()) & 
+        (pl.col("value").is_not_null()) &
         (pl.col("value") > 0) &
         (pl.col("x").is_not_null()) &
         (pl.col("y").is_not_null())
@@ -258,7 +255,7 @@ def load_dataset(dataset_config: dict) -> tuple:
 
     # 3. Optimized Data Fetching (Limit for massive files)
     if "rgealti" in dataset_config["name"]:
-        fetch_limit = target_n # Buffer for cleaning
+        fetch_limit = target_n
         print(f"  RGEALTI/Large file detected: Pre-fetching {fetch_limit} rows...")
         ldf = ldf.head(fetch_limit)
 
@@ -274,20 +271,20 @@ def load_dataset(dataset_config: dict) -> tuple:
     # 6. CRITICAL: Final Finite Check
     # This removes any NaNs or Infs created by the log transform or existing in data
     df = df.filter(
-        pl.col("value").is_finite() & 
-        pl.col("x").is_finite() & 
+        pl.col("value").is_finite() &
+        pl.col("x").is_finite() &
         pl.col("y").is_finite()
     )
 
     # 7. Exact Sampling
     if len(df) > target_n:
         df = df.sample(n=target_n, seed=RANDOM_STATE)
-    
+
     print(f"  Final clean dataset size: {len(df)}")
 
     X = df.select(["x", "y"])
     y = df.select("value").to_numpy().ravel()
-    
+
     del df
     gc.collect()
 
@@ -310,7 +307,7 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
 
     model_instance = model_config["class"](**params)
     number_axis = model_config.get("number_axis", 1)
- 
+
     pipeline = Pipeline([
         ("coord_rotation", AddCoordinatesRotation(
             coordinates_names=("x", "y"),
@@ -369,6 +366,7 @@ def run_benchmark(models: list, datasets: list) -> dict:
         "results": results,
     }
 
+
 def save_results(results: dict, output_dir: str = "results") -> Path:
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
@@ -377,6 +375,7 @@ def save_results(results: dict, output_dir: str = "results") -> Path:
         json.dump(results, f, indent=2)
     print(f"\nResults saved to: {filepath}")
     return filepath
+
 
 if __name__ == "__main__":
     benchmark_results = run_benchmark(MODELS, DATASETS)
