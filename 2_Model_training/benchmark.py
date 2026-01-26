@@ -111,12 +111,7 @@ MODELS = [
         "number_axis": 1,
         "params": {"n_estimators": 100, "max_features": 1.0, "max_depth": 20, "random_state": 42, "n_jobs": -1},
     },
-    {
-        "name": "oblique_rf_cr",
-        "class": ObliqueRandomForestRegressor,
-        "number_axis": 23,
-        "params": {"n_estimators": 100, "max_features": 1.0, "max_depth": 20, "random_state": 42, "n_jobs": -1},
-    },
+    # Very Low interest of cr, already look for non-orthogonal splits
 
     # --- GeoRF ---
     {
@@ -125,12 +120,7 @@ MODELS = [
         "number_axis": 1,
         "params": {"n_estimators": 50, "max_depth": 15, "min_samples_split": 10, "max_features": 2, "n_jobs": 1, "random_state": 42},
     },
-    {
-        "name": "geoRF_cr",
-        "class": GeoRFRegressor,
-        "number_axis": 23,
-        "params": {"n_estimators": 50, "max_depth": 15, "min_samples_split": 10, "max_features": 2, "n_jobs": 1, "random_state": 42},
-    },
+    # Very low interest of cr, already look for non-orthogonal splits
 
     # --- Kriging ---
     {
@@ -139,12 +129,7 @@ MODELS = [
         "number_axis": 1,
         "params": {"variogram_model": "exponential", "nlags": 10, "weight": True, "coordinates_type": "euclidean"},
     },
-    {
-        "name": "kriging_cr",
-        "class": PyKrigeWrapper,
-        "number_axis": 23,
-        "params": {"variogram_model": "exponential", "nlags": 10, "weight": True, "coordinates_type": "euclidean"},
-    },
+    # No point of cr, euclidian distance invariant to cr
 
     # --- GAM ---
     {
@@ -167,18 +152,27 @@ MODELS = [
         "number_axis": 1,
         "params": {"n_neighbors": 3, "weights": "distance", "n_jobs": -1}
     },
+    # No point of cr, euclidian distance invariant to cr
+
     {
         "name": "idw_p3",
         "class": IDWRegressor,
         "number_axis": 1,
         "params": {"power": 3, "n_neighbors": 15},
     }
+    # No point of cr, euclidian distance invariant to cr
 ]
 
 SIZE_SMALL = 5_000
 SIZE_LARGE = 100_000
 DATASETS = [
     # --- Real Datasets ---
+    {
+        "name": "rgealti",
+        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
+        "target_n": SIZE_LARGE,
+        "transform": "log"
+        },
     {
         "name": "bdalti",
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
@@ -193,12 +187,6 @@ DATASETS = [
         "target_n": SIZE_SMALL,
         "transform": "log"
         },
-#    {
-#        "name": "rgealti",
-#        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-#        "target_n": SIZE_LARGE,
-#        "transform": "log"
-#        },
     {
         "name": "rgealti_48",
         "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
@@ -222,7 +210,7 @@ METRICS = [
 
 COORD_ROTATION_AXIS = 23
 TEST_SIZE = 0.2
-RANDOM_STATE = 123456
+RANDOM_STATE = 42
 
 
 # =============================================================================
@@ -231,21 +219,22 @@ RANDOM_STATE = 123456
 
 
 def load_dataset(dataset_config: dict) -> tuple:
-    """Load and preprocess a dataset to reach a fixed target size with strict cleaning."""
+    """Load and preprocess massive datasets with a larger safety slice."""
     ldf = get_df_from_s3(dataset_config["path"])
     target_n = dataset_config.get("target_n", 5_000)
 
-    # Resolve schema and rename if necessary
-    columns = ldf.collect_schema().names()
-    if "val" in columns:
+    # Resolve schema
+    if "val" in ldf.collect_schema().names():
         ldf = ldf.rename({"val": "value"})
 
-    # 1. Filters (Predicate Pushdown)
-    if "filter_col" in dataset_config:
-        print(f"  Filtering {dataset_config['filter_col']} = {dataset_config['filter_val']}...")
-        ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == str(dataset_config["filter_val"]))
+    # 1. Logic for Massive Datasets
+    if "rgealti" in dataset_config["name"]:
+        # We take a 1M row slice to ensure that after all cleaning filters, 
+        # we still have at least 100k valid rows to sample from.
+        print(f"  Massive dataset: Slicing first 1,000,000 rows lazily...")
+        ldf = ldf.slice(0, 1_000_000)
 
-    # 2. Initial Cleaning (Remove nulls and non-positive values for log)
+    # 2. Filtering and Cleaning (Lazy)
     ldf = ldf.filter(
         (pl.col("value").is_not_null()) &
         (pl.col("value") > 0) &
@@ -253,32 +242,26 @@ def load_dataset(dataset_config: dict) -> tuple:
         (pl.col("y").is_not_null())
     )
 
-    # 3. Optimized Data Fetching (Limit for massive files)
-    if "rgealti" in dataset_config["name"]:
-        fetch_limit = target_n
-        print(f"  RGEALTI/Large file detected: Pre-fetching {fetch_limit} rows...")
-        ldf = ldf.head(fetch_limit)
+    # 3. Collection (Updated engine parameter)
+    print(f"  Streaming data collection to RAM...")
+    # 'streaming=True' is now 'engine="streaming"' in newer Polars versions
+    df = ldf.select(["x", "y", "value"]).collect(engine="streaming")
 
-    # 4. Collection to RAM
-    print(f"  Collecting and sampling to exactly {target_n} rows...")
-    df = ldf.select(["x", "y", "value"]).collect()
-
-    # 5. Log Transform
+    # 4. Log Transform and Finite Check
     if dataset_config.get("transform") == "log":
-        print("  Applying log transformation...")
         df = df.with_columns(pl.col("value").log())
 
-    # 6. CRITICAL: Final Finite Check
-    # This removes any NaNs or Infs created by the log transform or existing in data
     df = df.filter(
         pl.col("value").is_finite() &
         pl.col("x").is_finite() &
         pl.col("y").is_finite()
     )
 
-    # 7. Exact Sampling
-    if len(df) > target_n:
+    # 5. Exact Sampling
+    if len(df) >= target_n:
         df = df.sample(n=target_n, seed=RANDOM_STATE)
+    else:
+        print(f"  WARNING: Only {len(df)} rows available after cleaning.")
 
     print(f"  Final clean dataset size: {len(df)}")
 
@@ -296,11 +279,10 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
 
     params = model_config.get("params", {}).copy()
     model_name = model_config["name"]
-    avoid_big_set = ("georf" in model_name) or ("kriging" in model_name)
-    is_georf = "georf" in model_name
+    avoid_big_set = ("geoRF" in model_name) or ("kriging" in model_name)
 
-    # --- Logic: Skip GeoRF if dataset is too large ---
-    LARGE_THRESHOLD = 20_000
+    # --- Logic: Skip for slow algorithm if dataset is too large ---
+    LARGE_THRESHOLD = 10_000
     if avoid_big_set and len(X_train) > LARGE_THRESHOLD:
         print(f"    [SKIP] {model_name}: Dataset too large ({len(X_train)} rows).")
         return None
@@ -319,11 +301,7 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
 
     start = time.perf_counter()
 
-    if is_georf:
-        # GeoRF specific fit parameter
-        pipeline.fit(X_train, y_train, ml_model__gens="da")
-    else:
-        pipeline.fit(X_train, y_train)
+    pipeline.fit(X_train, y_train)
 
     training_time = time.perf_counter() - start
     y_pred = pipeline.predict(X_test)
@@ -331,7 +309,7 @@ def run_model(model_config: dict, X_train, X_test, y_train, y_test) -> dict:
     # Compute metrics
     metrics = {m["name"]: float(m["func"](y_test, y_pred)) for m in METRICS}
 
-    return {
+    return {     
         "model": model_name,
         "best_params": params,
         "training_time": round(training_time, 2),
