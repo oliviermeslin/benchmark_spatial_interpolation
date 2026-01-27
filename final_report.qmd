@@ -244,6 +244,52 @@ def get_model_color(model):
 
 Global comparison of all algorithms across datasets.
 
+```{python}
+# 
+
+def create_fig1_r2_heatmap():
+    """Figure 1: R² Scores Heatmap"""
+    fig, ax = plt.subplots(figsize=(12, 8))
+    
+    # Prepare data
+    all_models = sorted(set([r['model'] for r in results]))
+    r2_matrix = np.zeros((len(all_models), len(datasets)))
+    r2_matrix[:] = np.nan
+    
+    for i, model in enumerate(all_models):
+        for j, dataset in enumerate(datasets):
+            matching = [r for r in results if r['model'] == model and r['dataset'] == dataset]
+            if matching:
+                r2_matrix[i, j] = matching[0]['r2_score']
+    
+    # Create heatmap
+    im = ax.imshow(r2_matrix, aspect='auto', cmap='RdYlGn', vmin=0, vmax=1)
+    
+    # Set ticks
+    ax.set_xticks(np.arange(len(datasets)))
+    ax.set_yticks(np.arange(len(all_models)))
+    ax.set_xticklabels([dataset_names.get(d, d) for d in datasets], rotation=45, ha='right')
+    ax.set_yticklabels([model_names.get(m, m) for m in all_models])
+    
+    # Add colorbar
+    cbar = plt.colorbar(im, ax=ax)
+    cbar.set_label('R² Score', rotation=270, labelpad=15)
+    
+    # Add text annotations
+    for i in range(len(all_models)):
+        for j in range(len(datasets)):
+            if not np.isnan(r2_matrix[i, j]):
+                text = ax.text(j, i, f'{r2_matrix[i, j]:.3f}',
+                              ha="center", va="center", color="black", fontsize=7)
+    
+    ax.set_title('R² Scores Across All Models and Datasets')
+    plt.tight_layout()
+    plt.show()
+
+create_fig1_r2_heatmap()
+
+```
+
 ## Results by Algorithm Family
 
 ### Deterministic Methods
