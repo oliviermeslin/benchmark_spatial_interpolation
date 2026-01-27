@@ -74,7 +74,7 @@ For the **real datasets**, we utilize high-quality topographic data provided by 
 
 For the Small real-world datasets, we use a subset of the French territory by filtering for Department 48 (Lozère). This department was chosen because its diverse topography—ranging from deep canyons and plateaus to mountainous terrain—offers a representative sample of various geographic challenges for spatial interpolation.
 
-### Dataset Reference Table
+## Dataset Reference Table
 
 | Dataset Name | Origin | Size Category | Structure | Approx. Row Count | Description |
 |------------|------------|------------|------------|------------|------------|
@@ -170,7 +170,7 @@ To overcome these limitations, two main strategies can be considered. The first 
 
 The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applyng a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different represantions of the same space locations, unique for their rotation angle
 
-#### Algorithmic Procedure
+### Algorithmic Procedure
 
 We applied the coordinate rotation following the steps described below.
 
@@ -215,7 +215,7 @@ The final feature matrix for each observation consists of:
 
 In total we have **46 features** for coordinate-rotated models (compared to 2 features for baseline models using only original coordinates).
 
-#### Model Selection for Coordinate Rotation
+### Model Selection for Coordinate Rotation
 
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
@@ -226,9 +226,7 @@ Not all algorithms benefit equally from coordinate rotation. For this reason, we
 - GAM (GAM vs GAM-CR)
 
 The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms.
-
-#### Geometric Interpretation
-#### Geometric Interpretation
+### Geometric Interpretation
 
 From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
@@ -241,8 +239,7 @@ This condition defines a linear decision boundary in the original space with slo
 
 ### Implementation Details
 
--   Number of rotations\
--   Distribution of angles
+During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made [ASK OLIVIER]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 * (i / 23), The 23-th is the real one. 
 
 ## Experimental Setup and Evaluation Metrics
 
@@ -258,8 +255,8 @@ Our benchmark evaluation follows a standardized protocol to ensure fair comparis
 | **Coordinate Rotation** | 23 angles | Preprocessing for tree-based models (when applicable) |
 | **Target Transformation** | Log transform | Applied to real elevation datasets (BDALTI, RGEALTI) to handle skewness |
 | **Hardware** | SSPCloud environment | Multi-core CPU, optimized for parallel computation |
-| **Software** | Python 3.x | scikit-learn, XGBoost, PyKrige, pyGAM, GeoRF, Polars, scikit-learn-intelex |
-| **Parallelization** | n_jobs=-1 | All available cores utilized where supported |
+| **Software** | Python 3.13 | scikit-learn, XGBoost, PyKrige, pyGAM, GeoRF, Polars, scikit-learn-intelex |
+| **Parallelization** | n_jobs=-1 | When it's possible, all available cores utilized where supported |
 
 **Performance Metrics:**
 
@@ -282,20 +279,16 @@ import json
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+import pandas as pd
 from pathlib import Path
 
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
 
-# Set style
-sns.set_style("whitegrid")
+sns.set_style("white") # Changement pour éviter les grilles par défaut
 plt.rcParams['figure.dpi'] = 300
 plt.rcParams['font.size'] = 10
-plt.rcParams['axes.labelsize'] = 11
-plt.rcParams['axes.titlesize'] = 12
-plt.rcParams['xtick.labelsize'] = 9
-plt.rcParams['ytick.labelsize'] = 9
 
 # Load data
 with open('example.json', 'r') as f:
@@ -303,46 +296,40 @@ with open('example.json', 'r') as f:
 
 results = data['results']
 
-# Define datasets and model groups
-datasets = ['rgealti', 'bdalti', 'bdalti_48', 'rgealti_48', 'S-G-Sm', 'S-G-Lg', 'S-NG-Sm', 'S-NG-Lg']
+# Ordre spécifique demandé pour les datasets
+datasets = [
+    'rgealti_48', 'rgealti', 'bdalti_48', 'bdalti', 
+    'S-G-Sm', 'S-G-Lg', 'S-NG-Sm', 'S-NG-Lg'
+]
 
-# Model groupings
+# Groupements de modèles
 deterministic_models = ['knn_3', 'idw_p3']
 geostatistical_models = ['kriging']
 tree_models = ['random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr', 'mixgboost', 'mixgboost_cr']
 advanced_tree_models = ['oblique_rf', 'geoRF']
 gam_models = ['gam', 'gam_cr']
 
-# Model display names
 model_names = {
-    'random_forest': 'RF',
-    'random_forest_cr': 'RF-CR',
-    'xgboost': 'XGB',
-    'xgboost_cr': 'XGB-CR',
-    'mixgboost': 'MixGB',
-    'mixgboost_cr': 'MixGB-CR',
-    'oblique_rf': 'Oblique RF',
-    'geoRF': 'GeoRF',
-    'knn_3': 'KNN-3',
-    'idw_p3': 'IDW-p3',
-    'kriging': 'Kriging',
-    'gam': 'GAM',
-    'gam_cr': 'GAM-CR'
+    'random_forest': 'RF', 'random_forest_cr': 'RF-CR',
+    'xgboost': 'XGB', 'xgboost_cr': 'XGB-CR',
+    'mixgboost': 'MixGB', 'mixgboost_cr': 'MixGB-CR',
+    'oblique_rf': 'Oblique RF', 'geoRF': 'GeoRF',
+    'knn_3': 'KNN-3', 'idw_p3': 'IDW-p3',
+    'kriging': 'Kriging', 'gam': 'GAM', 'gam_cr': 'GAM-CR'
 }
 
-# Dataset display names
+# Nouveaux noms avec parenthèses descriptives
 dataset_names = {
-    'rgealti': 'RGE ALTI',
-    'bdalti': 'BD ALTI',
-    'bdalti_48': 'BD ALTI 48',
-    'rgealti_48': 'RGE ALTI 48',
+    'rgealti_48': 'Real Grid Small',
+    'rgealti': 'Real Grid Large',
+    'bdalti_48': 'Real No-Grid Small',
+    'bdalti': 'Real No-Grid Large',
     'S-G-Sm': 'Synth Grid Small',
     'S-G-Lg': 'Synth Grid Large',
     'S-NG-Sm': 'Synth No-Grid Small',
     'S-NG-Lg': 'Synth No-Grid Large'
 }
 
-# Color schemes
 color_deterministic = '#2E86AB'
 color_geostat = '#A23B72'
 color_tree = '#F18F01'
@@ -350,17 +337,11 @@ color_advanced_tree = '#C73E1D'
 color_gam = '#6A994E'
 
 def get_model_color(model):
-    """Get color for a model based on its family"""
-    if model in deterministic_models:
-        return color_deterministic
-    elif model in geostatistical_models:
-        return color_geostat
-    elif model in tree_models:
-        return color_tree
-    elif model in advanced_tree_models:
-        return color_advanced_tree
-    elif model in gam_models:
-        return color_gam
+    if model in deterministic_models: return color_deterministic
+    if model in geostatistical_models: return color_geostat
+    if model in tree_models: return color_tree
+    if model in advanced_tree_models: return color_advanced_tree
+    if model in gam_models: return color_gam
     return '#888888'
 ```
 
@@ -369,86 +350,317 @@ def get_model_color(model):
 Global comparison of all algorithms across datasets.
 
 ```{python}
-# 
+#| echo: false
 
-def create_fig1_r2_heatmap():
-    """Figure 1: R² Scores Heatmap"""
-    fig, ax = plt.subplots(figsize=(12, 8))
+def create_fig1_r2_heatmap_final():
+    ordered_groups = [
+        ('Det.', deterministic_models),
+        ('Tree', tree_models),
+        ('Adv.', advanced_tree_models),
+        ('Geo.', geostatistical_models),
+        ('GAM', gam_models)
+    ]
     
-    # Prepare data
-    all_models = sorted(set([r['model'] for r in results]))
-    r2_matrix = np.zeros((len(all_models), len(datasets)))
+    all_models_ordered = []
+    group_boundaries = []
+    curr = 0
+    for _, mods in ordered_groups:
+        all_models_ordered.extend(mods)
+        curr += len(mods)
+        group_boundaries.append(curr)
+    group_boundaries.pop()
+
+    r2_matrix = np.zeros((len(all_models_ordered), len(datasets)))
     r2_matrix[:] = np.nan
     
-    for i, model in enumerate(all_models):
-        for j, dataset in enumerate(datasets):
-            matching = [r for r in results if r['model'] == model and r['dataset'] == dataset]
-            if matching:
-                r2_matrix[i, j] = matching[0]['r2_score']
+    for i, model in enumerate(all_models_ordered):
+        for j, ds in enumerate(datasets):
+            match = [r for r in results if r['model'] == model and r['dataset'] == ds]
+            if match: r2_matrix[i, j] = match[0]['r2_score']
     
-    # Create heatmap
-    im = ax.imshow(r2_matrix, aspect='auto', cmap='RdYlGn', vmin=0, vmax=1)
+    fig, ax = plt.subplots(figsize=(14, 8))
+    im = ax.imshow(r2_matrix, aspect='auto', cmap='RdYlGn', vmin=0.5, vmax=1)
     
-    # Set ticks
     ax.set_xticks(np.arange(len(datasets)))
-    ax.set_yticks(np.arange(len(all_models)))
-    ax.set_xticklabels([dataset_names.get(d, d) for d in datasets], rotation=45, ha='right')
-    ax.set_yticklabels([model_names.get(m, m) for m in all_models])
+    ax.set_yticks(np.arange(len(all_models_ordered)))
+    ax.set_xticklabels([dataset_names[d] for d in datasets], rotation=30, ha='right')
     
-    # Add colorbar
-    cbar = plt.colorbar(im, ax=ax)
-    cbar.set_label('R² Score', rotation=270, labelpad=15)
+    # Coloration et labels axe Y
+    y_labels = [model_names.get(m, m) for m in all_models_ordered]
+    ax.set_yticklabels(y_labels)
+    for i, m_key in enumerate(all_models_ordered):
+        ax.get_yticklabels()[i].set_color(get_model_color(m_key))
+        ax.get_yticklabels()[i].set_weight('bold')
+
+    # Barres noires épaisses
+    for b in group_boundaries:
+        ax.axhline(y=b - 0.5, color='black', linewidth=4, zorder=10)
     
-    # Add text annotations
-    for i in range(len(all_models)):
+    # Annotations
+    for i in range(len(all_models_ordered)):
         for j in range(len(datasets)):
             if not np.isnan(r2_matrix[i, j]):
-                text = ax.text(j, i, f'{r2_matrix[i, j]:.3f}',
-                              ha="center", va="center", color="black", fontsize=7)
+                val = r2_matrix[i, j]
+                ax.text(j, i, f'{val:.3f}', ha="center", va="center", 
+                        color="white" if val < 0.6 else "black", fontsize=8, fontweight='bold')
     
-    ax.set_title('R² Scores Across All Models and Datasets')
+    plt.colorbar(im, ax=ax, label='$R^2$ Score')
+    ax.set_title('Global Performance $R^2$ (Ordered by Dataset & Algorithm Group)')
     plt.tight_layout()
     plt.show()
 
-create_fig1_r2_heatmap()
+create_fig1_r2_heatmap_final()
 
 ```
 
-## Results by Algorithm Family
-
-### Deterministic Methods
-
-Analysis of IDW and nearest-neighbor interpolation.
-
-### Geostatistical Methods
-
-Analysis of Ordinary Kriging and related findings.
-
-### Tree-Based Machine Learning Methods
-
-Performance of Random Forest, Gradient Boosting, XGBoost and MixGBoost.
-
-### Advanced Spatial Tree Methods
-
-GeoSpatial RF and Oblique RF results.
-
-### Generalized Additive Models
-
-Performance and computational considerations.
-
-## Cross-Dataset Analysis
-
-### Effect of Coordinate Rotation
-
-Comparison of results with and without rotation.
+## Detallied Analysis
 
 ### Grid vs No-Grid Datasets
 
 Impact of spatial structure on performance.
 
+```{python}
+#| echo: false
+
+def create_fig_side_by_side_delta():
+    """Figure: Comparaison Grid vs No-Grid (Real vs Synthetic) classée par performance"""
+    
+    # 1. Calcul des Deltas
+    categories = {
+        'Real Datasets (Small)': ('rgealti_48', 'bdalti_48'),
+        'Synthetic Datasets (Small)': ('S-G-Sm', 'S-NG-Sm')
+    }
+    
+    fig, axes = plt.subplots(1, 2, figsize=(18, 8), sharey=False)
+    
+    for ax, (title, (grid_ds, nogrid_ds)) in zip(axes, categories.items()):
+        delta_list = []
+        
+        for m_key in model_names.keys():
+            grid_res = [r for r in results if r['model'] == m_key and r['dataset'] == grid_ds]
+            nogrid_res = [r for r in results if r['model'] == m_key and r['dataset'] == nogrid_ds]
+            
+            if grid_res and nogrid_res:
+                delta = grid_res[0]['r2_score'] - nogrid_res[0]['r2_score']
+                delta_list.append({
+                    'ModelName': model_names[m_key],
+                    'Delta': delta,
+                    'Color': get_model_color(m_key)
+                })
+        
+        # Création du DataFrame et Tri décroissant
+        df_temp = pd.DataFrame(delta_list).sort_values(by='Delta', ascending=False)
+        
+        # Plot
+        bars = ax.bar(df_temp['ModelName'], df_temp['Delta'], color=df_temp['Color'], edgecolor='black', linewidth=0.8)
+        
+        # Esthétique
+        ax.axhline(0, color='black', linewidth=2)
+        ax.grid(False) # Suppression de la grille
+        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
+        ax.set_ylabel('$\Delta R^2$ (Grid - No Grid)')
+        
+        # Rotation des labels X
+        ax.set_xticks(range(len(df_temp)))
+        ax.set_xticklabels(df_temp['ModelName'], rotation=45, ha='right')
+        
+        # Coloration des labels de l'axe X pour correspondre aux barres
+        for tick, color in zip(ax.get_xticklabels(), df_temp['Color']):
+            tick.set_color(color)
+            tick.set_weight('bold')
+
+    # Ajout d'une légende commune pour les groupes de modèles
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], color=color_deterministic, lw=6, label='Deterministic'),
+        Line2D([0], [0], color=color_geostat, lw=6, label='Geostatistical'),
+        Line2D([0], [0], color=color_tree, lw=6, label='Tree-based'),
+        Line2D([0], [0], color=color_advanced_tree, lw=6, label='Advanced Tree'),
+        Line2D([0], [0], color=color_gam, lw=6, label='GAM')
+    ]
+    fig.legend(handles=legend_elements, loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.05), frameon=True)
+
+    plt.suptitle('Impact of Grid Structure on Model Performance ($R^2$)', fontsize=16, y=1.02)
+    plt.tight_layout()
+    plt.show()
+
+create_fig_side_by_side_delta()
+```
+
+### Effect of Coordinate Rotation
+
+Comparison of results with and without rotation.
+```{python}
+#| echo: false
+
+def create_fig2_rotation_comparison():
+    """Figure 2: Impact of Coordinate Rotation on Model Performance"""
+    rotation_pairs = [
+        ('random_forest', 'random_forest_cr'),
+        ('xgboost', 'xgboost_cr'),
+        ('mixgboost', 'mixgboost_cr'),
+        ('gam', 'gam_cr')
+    ]
+    
+    # Prepare data for plotting
+    plot_data = []
+    for base_key, cr_key in rotation_pairs:
+        for dataset in datasets:
+            base_res = [r for r in results if r['model'] == base_key and r['dataset'] == dataset]
+            cr_res = [r for r in results if r['model'] == cr_key and r['dataset'] == dataset]
+            
+            if base_res and cr_res:
+                plot_data.append({
+                    'Algorithm': model_names[base_key].replace('-CR', ''),
+                    'Type': 'Standard',
+                    'R2': base_res[0]['r2_score'],
+                    'Family': base_key
+                })
+                plot_data.append({
+                    'Algorithm': model_names[base_key].replace('-CR', ''),
+                    'Type': 'With CR',
+                    'R2': cr_res[0]['r2_score'],
+                    'Family': base_key
+                })
+
+    import pandas as pd
+    df_plot = pd.DataFrame(plot_data)
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=df_plot, x='Algorithm', y='R2', hue='Type', ax=ax, palette=['#D3D3D3', '#505050'])
+    
+    # Coloring the x-axis labels by family
+    for i, label in enumerate(ax.get_xticklabels()):
+        model_key = [k for k, v in model_names.items() if v == label.get_text()][0]
+        label.set_color(get_model_color(model_key))
+        label.set_weight('bold')
+
+    ax.set_title('Performance Comparison: Standard vs Coordinate Rotation (CR)')
+    ax.set_ylim(0, 1.05)
+    ax.set_ylabel('$R^2$ Score')
+    plt.legend(title='Method', loc='lower right')
+    plt.tight_layout()
+    plt.show()
+
+create_fig2_rotation_comparison()
+```
+
+
 ### Scalability
 
 Performance comparison on small vs large datasets.
+
+```{python}
+
+#| echo: false
+
+def create_fig4_real_vs_synthetic():
+    """Figure 5: Performance Consistency: Real vs Synthetic Data"""
+    real_ds = ['rgealti', 'bdalti', 'bdalti_48', 'rgealti_48']
+    
+    plot_data = []
+    for r in results:
+        category = 'Real' if r['dataset'] in real_ds else 'Synthetic'
+        plot_data.append({
+            'Model': model_names[r['model']],
+            'Category': category,
+            'R2': r['r2_score'],
+            'Family': r['model']
+        })
+        
+    import pandas as pd
+    df_plot = pd.DataFrame(plot_data)
+    
+    # Sort by model family
+    ordered_models = deterministic_models + geostatistical_models + tree_models + advanced_tree_models + gam_models
+    df_plot['Model'] = pd.Categorical(df_plot['Model'], categories=[model_names[m] for m in ordered_models], ordered=True)
+    df_plot = df_plot.sort_values('Model')
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.boxplot(data=df_plot, x='Model', y='R2', hue='Category', ax=ax, palette=['#4A90E2', '#50E3C2'])
+    
+    # Color labels
+    for i, label in enumerate(ax.get_xticklabels()):
+        m_key = ordered_models[i]
+        label.set_color(get_model_color(m_key))
+        label.set_weight('bold')
+
+    ax.set_title('Performance Range: Real vs Synthetic Datasets')
+    ax.set_ylabel('$R^2$ Score')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    plt.show()
+
+create_fig4_real_vs_synthetic()
+```
+
+# Time Performance Analysis
+
+```{python}
+#| echo: false
+
+def create_fig_single_small_time_average():
+    """Figure: Temps d'entraînement moyen sur tous les Small Datasets"""
+    
+    # 1. Identification des datasets "Small"
+    small_ds_list = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
+    
+    time_avg_list = []
+    
+    for m_key in model_names.keys():
+        # Filtrer les résultats pour ce modèle sur les datasets Small uniquement
+        relevant_results = [r for r in results if r['model'] == m_key and r['dataset'] in small_ds_list]
+        
+        if relevant_results:
+            # Calcul de la moyenne du temps d'entraînement
+            avg_time = np.mean([r.get('training_time', 0) for r in relevant_results])
+            time_avg_list.append({
+                'ModelKey': m_key,
+                'ModelName': model_names[m_key],
+                'AvgTime': avg_time,
+                'Color': get_model_color(m_key)
+            })
+    
+    # 2. Création du DataFrame et tri décroissant par temps
+    df_time = pd.DataFrame(time_avg_list).sort_values(by='AvgTime', ascending=True)
+    
+    # 3. Plot
+    fig, ax = plt.subplots(figsize=(12, 7))
+    
+    bars = ax.bar(df_time['ModelName'], df_time['AvgTime'], 
+                  color=df_time['Color'], edgecolor='black', linewidth=0.8)
+    
+    # 4. Esthétique et Échelle
+    ax.set_yscale('log')
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+    ax.set_title('Average Training Time on Small Datasets (All Types)', fontsize=14, fontweight='bold', pad=20)
+    ax.set_ylabel('Mean Training Time (seconds) - Log Scale', fontsize=12)
+    ax.set_xlabel('Algorithms (Ranked by Duration)', fontsize=12)
+    
+    # 5. Coloration des noms des modèles sur l'axe X
+    ax.set_xticks(range(len(df_time)))
+    ax.set_xticklabels(df_time['ModelName'], rotation=45, ha='right')
+    
+    for tick, color in zip(ax.get_xticklabels(), df_time['Color']):
+        tick.set_color(color)
+        tick.set_weight('bold')
+
+    # Ajout de la légende des groupes
+    from matplotlib.lines import Line2D
+    legend_elements = [
+        Line2D([0], [0], color=color_deterministic, lw=6, label='Deterministic'),
+        Line2D([0], [0], color=color_geostat, lw=6, label='Geostatistical'),
+        Line2D([0], [0], color=color_tree, lw=6, label='Tree-based'),
+        Line2D([0], [0], color=color_advanced_tree, lw=6, label='Advanced Tree'),
+        Line2D([0], [0], color=color_gam, lw=6, label='GAM')
+    ]
+    ax.legend(handles=legend_elements, title="Algorithm Groups", loc='upper right', frameon=True)
+
+    plt.tight_layout()
+    plt.show()
+
+create_fig_single_small_time_average()
+```
 
 # Discussion
 
