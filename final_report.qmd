@@ -29,6 +29,7 @@ execute:
   warning: false
   message: false
 ---
+
 \begin{titlepage}
 \begin{center}
 \includegraphics[width=0.7\textwidth]{ensai_logo.png}\\[1.5 cm] 
@@ -58,10 +59,6 @@ Olivier \textsc{Meslin} \\ \vspace{0.6cm}
 \end{center}
 \end{titlepage}
 \clearpage
-
-# Abstract
-
-This report provides a comprehensive benchmark...
 
 # Abstract
 
@@ -120,13 +117,13 @@ Overview of the benchmarking framework and experimental pipeline.
 
 ## Algorithms Considered
 
-|  |  |
+|                                       |                                    |
 |----------------------------------------|--------------------------------|
 | A\) Generalized Additive Models (GAM) | F\) Nearest Neighbor Interpolation |
-| B\) GeoSpatial Random Forest | G\) Oblique Random Forest |
-| C\) Gradient Boosting (HistGradientBoosting) | H\) Ordinary Kriging |
-| D\) Inverse Distance Weighting (IDW) | I\) Random Forest |
-| E\) MixGBoost | J\) XGBoost |
+| B\) GeoSpatial Random Forest          | G\) Oblique Random Forest          |
+| C\) Gradient Boosting                 | H\) Ordinary Kriging               |
+| D\) Inverse Distance Weighting (IDW)  | I\) Random Forest                  |
+| E\) MixGBoost                         | J\) XGBoost                        |
 
 ## Conceptual Comparison of Methods
 
@@ -136,58 +133,57 @@ Our benchmark compares ten spatial interpolation algorithms that can be grouped 
 
 #### Deterministic Methods
 
-Inverse Distance Weighting (IDW) and K-Nearest Neighbors (K-NN) belong to the deterministic family. These methods share fundamental characteristics that distinguish them from other approaches. First, they make no probabilistic assumptions about the underlying data generation process. Second, they do not model prediction uncertainty or provide confidence intervals. Third, they are deterministic in the strict mathematical sense: given identical input data, they always produce the same output, with no stochastic component in their formulation. Finally, they rely on fixed mathematical rules to compute interpolated values rather than learning from data.
+**Inverse Distance Weighting** (IDW) and **K-Nearest Neighbors** (K-NN) belong to the ***deterministic family***. These methods share fundamental characteristics that distinguish them from other approaches. First, they make **no probabilistic assumptions about** the **underlying data generation process**. Second, they do **not model prediction uncertainty** or provide confidence intervals. Third, they are **deterministic** in the **strict mathematical sense**: given identical input data, they always produce the same output, with no stochastic component in their formulation. Finally, they rely on fixed mathematical rules to compute interpolated values rather than learning from data.
 
-IDW calculates predictions as a weighted average based on inverse distance, where the weight assigned to each observation decreases as a power function of distance from the prediction location. The formula is straightforward: closer points receive higher weights, and the rate of decay is controlled by a single power parameter. KNN takes an even simpler approach, computing the average (or weighted average) of the k nearest neighbors to the prediction point. Both methods follow purely geometric rules without any underlying statistical model.
+-   **IDW** calculates **predictions** as a **weighted average based on inverse distance**, where the **weight assigned** to each observation **decreases** as a **power function of distance** from the prediction location. So closer points receive higher weights, and the rate of decay is controlled by a single power parameter.
 
-This simplicity brings clear practical advantages. Deterministic methods are easy to implement, requiring only basic distance calculations. They are computationally efficient since no training phase is needed—predictions can be made immediately from the observed data. The transparency of their mechanisms makes them highly interpretable: users can easily understand why a particular prediction was made. However, these strengths come with limitations. Deterministic methods do not explicitly model the complex spatial structure that may exist in the data. They also make rigid assumptions—for instance, IDW assumes that influence always decreases monotonically with distance, which may not hold in all spatial contexts. Despite these constraints, their robustness and speed make them valuable baseline methods.
+-   **KNN** takes an even simpler approach, computing the **average** (or weighted average) of the **k nearest neighbors to the prediction point**.
 
-#### Geostatistical Methods
+Both methods so are based purely on geometric principles and do not rely on any underlying statistical model. This simplicity offers clear practical advantages: they are easy to implement, as they only require basic distance computations, and they are computationally efficient because no training phase is needed. Their deterministic nature also makes them highly interpretable, since it is straightforward to understand how each prediction is obtained.
 
-Ordinary Kriging represents the geostatistical approach, which is rooted in the theory of regionalized variables. Unlike deterministic methods, Kriging treats spatial data as realizations of an underlying stochastic spatial process. This probabilistic framework enables the method to explicitly model spatial autocorrelation, provide uncertainty estimates for predictions, and optimize weights to minimize prediction error variance.
+At the same time, this simplicity comes with some limitations. These methods do not explicitly capture complex spatial structures that may be present in the data, and they rely on rigid assumptions. For instance, IDW assumes that the influence of observations decreases monotonically with distance, an assumption that may not hold in all spatial contexts. Despite these drawbacks, their speed and robustness make them useful baseline approaches.
 
-The heart of the Kriging approach is the variogram, a function that quantifies how the similarity between observations changes with distance. Rather than simply assuming that nearby points matter more (as deterministic methods do), Kriging asks a more nuanced question: exactly how much do nearby points matter, and how does this relationship change across different spatial scales? The variogram provides the answer by modeling the spatial correlation structure directly from the data. Through this analysis, Kriging determines optimal prediction weights by solving a system of linear equations that accounts for both the distances to observation points and the overall spatial configuration of the data.
+#### Geostatistical Method
 
-This rigorous theoretical foundation gives Kriging several important strengths. It is proven to be the Best Linear Unbiased Predictor (BLUP) under its assumptions, meaning it provides optimal predictions in a well-defined statistical sense. The method explicitly models spatial structure rather than relying on simple distance-based rules. It guarantees exact interpolation at observed locations—the predicted value at any observation point equals the observed value. The resulting surfaces are smooth and continuous, avoiding the discontinuities that can occur with simpler methods. Perhaps most importantly, Kriging provides uncertainty quantification: it estimates not just the predicted value at each location, but also the prediction variance, enabling the construction of confidence intervals.
+**Ordinary Kriging** represents the geostatistical approach. Unlike deterministic methods, it treats **spatial data** as **realizations** of an **underlying stochastic process**. This probabilistic framework allows the method to explicitly **model spatial autocorrelation**, provide uncertainty estimates for predictions, and determine weights that minimize the variance of the prediction error.
 
-However, these theoretical advantages come with significant practical challenges. Kriging has cubic computational complexity, requiring the inversion of an n×n matrix where n is the number of observations. This makes it prohibitively slow for datasets exceeding roughly 10,000 points. The method also rests on strong statistical assumptions. Ordinary Kriging assumes intrinsic stationarity, meaning that the mean is constant (though unknown) across the study area and that the variogram depends only on the separation distance between points, not on their absolute locations. It further assumes isotropy, where spatial correlation depends only on distance, not direction. When spatial patterns show directional trends or anisotropy, these assumptions are violated, potentially degrading performance.
+At the core of the approach lies the **variogram**, which describes how similarity between observations changes with distance. Rather than simply assuming that nearby points are more influential, as deterministic methods do, **Kriging asks how strong this influence is and how it evolves across spatial scales**. Based on this information, optimal prediction weights are obtained by solving a system of linear equations that accounts for both inter-point distances and the overall spatial configuration.
 
-Beyond computational and theoretical constraints, Kriging faces practical implementation challenges. Before making predictions, one must first estimate the variogram from the data. This process involves choosing a theoretical variogram model (spherical, exponential, Gaussian, or others) and estimating its parameters (nugget, sill, and range). This estimation step is often somewhat subjective, requiring judgment and expertise, and the results can be sensitive to outliers in the data. An incorrectly specified variogram directly translates to poor predictions. Additionally, as a linear method, Kriging struggles to capture highly nonlinear spatial patterns. It can produce overfitted results when working with small datasets, and it implicitly assumes that the data follow a Gaussian distribution, requiring transformations when dealing with skewed variables.
+This solid theoretical foundation gives Kriging several important advantages. Under its assumptions it is the **BLUP** ensuring optimality in a statistical sense. It also guarantees exact interpolation at observed locations and produces smooth, continuous surfaces, avoiding the abrupt artifacts that may arise with simpler approaches. In addition, it naturally provides **measures of predictive uncertainty**, enabling the construction of **confidence intervals**.
 
-These practical limitations mean that while Kriging is theoretically superior in many respects, it is not always the most practical choice for real-world applications. The gap between theoretical optimality and practical performance is an important theme in our benchmark results.
+However, these theoretical advantages come with substantial practical challenges. Kriging has **cubic computational complexity**, as it **requires the inversion of an** $n \times n$ **matrix**, where $n$ is the number of observations. As a result, it becomes **prohibitively slow for datasets larger than roughly 10,000 points**. In addition, the method relies on strong statistical assumptions. It assumes intrinsic **stationarity**, implying a constant mean over the study area and a variogram that depends only on the distance between points, not on their absolute location. It also assumes **isotropy**, meaning that **spatial correlation depends solely on distance and not on direction**. When spatial patterns exhibit directional effects or anisotropy, these **assumptions** are **violated**, potentially leading to **degraded performance**.
+
+Beyond these computational and theoretical issues, Kriging also presents practical implementation difficulties. Prior to prediction, the variogram must be estimated from the data. This step requires selecting a theoretical variogram model—such as spherical, exponential, or Gaussian—and estimating its key parameters, including the nugget, sill, and range. This procedure is often partly subjective, demanding experience and judgment, and it can be sensitive to outliers. Since prediction quality depends directly on the variogram specification, a poorly fitted model can result in unreliable estimates. Moreover, as a linear method, Kriging has **limited ability** to **represent highly nonlinear spatial patterns**. It may overfit when applied to small datasets and implicitly assumes Gaussianity of the data, making transformations necessary when variables are strongly skewed.
+
+Taken together, these limitations imply that although Kriging is theoretically optimal under its assumptions, it is not always the most practical choice in real-world settings. The gap between theoretical optimality and empirical performance is therefore a central theme in the benchmark results presented in this study.
 
 #### Machine Learning Methods
 
-The machine learning family in our benchmark includes Random Forest, Oblique Random Forest, Geospatial Random Forest (GeoRF), XGBoost, HistGradientBoosting, MixGBoost, and Generalized Additive Models (GAM). These methods represent a fundamentally different paradigm from both deterministic and geostatistical approaches. Within this diverse group, we can distinguish tree-based ensemble methods (all except GAM) from non-tree-based approaches, a distinction that has important implications for their behavior with spatial data.
+The machine learning family in our benchmark includes **Random Forest**, **Oblique Random Forest**, **Geospatial Random Forest** (GeoRF), **XGBoost**, **MixGBoost** and **Generalized Additive Models** (GAM). These methods represent a fundamentally different paradigm from both deterministic and geostatistical approaches. Within this diverse group, we can distinguish **tree-based ensemble methods** (all except GAM) from **non-tree-based approach**, a distinction that has important implications for their behavior with spatial data.
 
-Machine learning algorithms are fundamentally data-driven. They do not rely on fixed mathematical formulas or assume specific probabilistic structures. Instead, they learn complex patterns directly from training data through an iterative optimization process that automatically minimizes a loss function. This learning process enables ML methods to model highly nonlinear relationships between input features (spatial coordinates x and y) and the target variable z, without requiring users to specify the functional form in advance. The models iteratively improve their predictions using optimization algorithms such as gradient descent, boosting, or bagging, adapting to whatever patterns exist in the training data.
+This type of algorithms are fundamentally data-driven. They do **not rely** on **fixed mathematical formulas** anf they **do not assume specific probabilistic structures**. Instead, they learn complex patterns directly from training data through an iterative optimization process that automatically minimizes a loss function. This learning process enables ML methods to **model highly nonlinear relationships** between input features (spatial coordinates x and y) and the target variable z. The models **iteratively improve** their **predictions** using **optimization algorithms** such as **gradient descent**, **boosting**, or **bagging**, adapting to whatever patterns exist in the training data.
 
-Tree-based ensemble methods build predictions through recursive partitioning of the feature space. Random Forest employs a bagging strategy, training multiple decision trees on bootstrap samples of the data and averaging their predictions to reduce variance. Each individual tree learns to partition the coordinate space by making binary splits that minimize prediction error within resulting regions. The averaging across many diverse trees produces stable, robust predictions. Gradient boosting methods, including XGBoost, HistGradientBoosting, and MixGBoost, take a different approach by building trees sequentially. Each new tree is trained to predict the residual errors of the existing ensemble, with the final prediction being a weighted sum of all trees. This iterative error correction often leads to higher accuracy than bagging, though it requires careful tuning to avoid overfitting.
+**Tree-based** ensemble methods build predictions through **recursive partitioning** of the **feature space**.
 
-Oblique Random Forest extends the standard Random Forest framework by allowing decision boundaries that are not parallel to the coordinate axes. While standard trees make splits like "if x < threshold" or "if y < threshold", oblique trees can make diagonal splits such as "if a₁·x + a₂·y < threshold". This added flexibility can be particularly valuable for spatial data where patterns may not align with the coordinate system. GeoRF builds on Random Forest specifically for geographic applications, explicitly incorporating spatial information into the learning process while maintaining the ensemble tree framework.
+-   **Random Forest** employs a **bagging strategy**, training multiple decision trees on bootstrap samples of the data and averaging their predictions to reduce variance. Each individual tree learns to partition the coordinate space by making binary splits that minimize prediction error within resulting regions. The averaging across many diverse trees produces **stable**, **robust predictions**.\
+    \
+    **Oblique Random Forest** extends the standard Random Forest framework by **allowing decision boundaries** that are **not parallel to the coordinate axes**. While standard trees make axis-aligned splits of the form $x < t$ or $y < t$, oblique trees allow diagonal splits such as $a_1 x + a_2 y < t$. This added flexibility can be particularly **valuable for spatial data** where patterns may not align with the coordinate system.\
+    \
+    **GeoRF** builds on **Random Forest** specifically for **geographic applications**, explicitly incorporating spatial information into the learning process while maintaining the ensemble tree framework.
 
-GAM represents a distinct approach within the ML family. Rather than using trees, it models the target as a sum of smooth nonlinear functions of the input features. This additive structure maintains some interpretability while still capturing nonlinear effects, positioning GAM at the boundary between classical statistical modeling and modern machine learning.
+-   **Gradient boosting** methods, take a different approach by **building trees sequentially**. Each new tree is trained to predict the residual errors of the existing ensemble, with the final prediction being a weighted sum of all trees. This iterative error correction often leads to **higher accuracy than bagging**, though it requires **careful tuning to avoid overfitting**.
 
-Critically, none of these ML methods explicitly model spatial autocorrelation in the way that Kriging does. They do not estimate variograms or make assumptions about stationarity. Instead, they learn spatial patterns implicitly through the coordinate features provided during training, discovering whatever structure exists in the data through the optimization process.
+**GAM** represents a distinct approach within the ML family, it models the target as a **sum of smooth nonlinear functions of the input features**. This additive structure maintains some **interpretability** while still **capturing nonlinear effects**, positioning it at the boundary between classical statistical modeling and modern machine learning.
 
-This data-driven flexibility brings substantial advantages. ML methods can adapt to virtually any pattern in the data without requiring users to specify functional forms or make strong distributional assumptions. They scale well to large datasets—Random Forest and XGBoost can handle hundreds of thousands of observations efficiently. They automatically capture complex interactions between features, including nonlinear spatial patterns that would be difficult to specify manually. These methods represent the state-of-the-art in many prediction tasks across diverse domains.
+Unlike Kriging, machine learning methods **do not explicitly model spatial autocorrelation**. Instead, **spatial structure is learned** implicitly **from coordinate features during training**. This data-driven approach gives ML models a high degree of flexibility, allowing them to **capture complex and nonlinear spatial patterns** and to **scale efficiently to large datasets**.
 
-However, this flexibility also introduces challenges. ML methods require a distinct training phase with careful attention to train-test splitting and cross-validation to avoid overfitting. They involve numerous hyperparameters (tree depth, number of estimators, learning rates, regularization strengths) that must be tuned, often requiring extensive experimentation. The resulting models are often difficult to interpret—understanding why a Random Forest with 100 trees makes a particular prediction is far less straightforward than understanding why IDW assigns certain weights. Unlike Kriging, ML methods do not naturally provide uncertainty estimates, though techniques like quantile regression or bootstrapping can be applied at additional computational cost.
-
-Most importantly for spatial interpolation, tree-based ML methods face a fundamental geometric challenge. Decision trees make splits parallel to the coordinate axes, which works well when patterns align with these axes but struggles when spatial phenomena exhibit diagonal gradients. Elevation may increase from southwest to northeast, geological features may be oriented obliquely to map coordinates, or meteorological patterns may follow prevailing wind directions that do not align with north-south or east-west axes. Without additional preprocessing to address this limitation, tree-based methods can substantially underperform even simple deterministic approaches on spatial data.
-
-### Synthesis: Choosing Among Families
-
-The three algorithm families represent distinct trade-offs between theoretical rigor, computational efficiency, and practical flexibility. Deterministic methods offer unmatched simplicity and speed at the cost of limited sophistication. Geostatistical methods provide optimal predictions and uncertainty quantification under specific assumptions, but demand computational resources and statistical expertise. Machine learning methods deliver maximum flexibility and can capture complex patterns, but require careful training, tuning, and—for spatial applications—thoughtful preprocessing.
-
-Our benchmark reveals that these theoretical distinctions translate into tangible performance differences that depend critically on the characteristics of the data and the appropriateness of preprocessing. The relationship between algorithmic complexity and predictive performance is not monotonic—more sophisticated methods do not automatically outperform simpler ones. Understanding when each family excels requires examining not just their theoretical properties, but their behavior on real spatial interpolation tasks.
+However, this flexibility also entails important limitations for spatial interpolation. Because spatial dependence is not modeled explicitly, ML methods lack a principled notion of uncertainty and do not naturally provide prediction intervals. Moreover, **tree-based models** are subject to a **fundamental geometric constraint**: their **axis-aligned splits struggle to represent spatial gradients that evolve along oblique directions**. When spatial patterns are not aligned with the coordinate axes, this limitation can lead to suboptimal performance, in some cases even compared to simpler deterministic approaches. To mitigate this issue, in our analysis we explored **coordinate rotation** with the aim of **better aligning spatial patterns with the model’s decision boundaries**.
 
 ## Coordinate Rotation
 
-In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis.
-This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
+In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
 
-The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a  staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
+The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
 
 To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
@@ -232,9 +228,7 @@ This generates a set of rotated coordinate pairs $(x'_{ij}, y'_{ij})$ for each o
 
 **Step 4: Construct Augmented Feature Matrix**
 
-The final feature matrix for each observation consists of:
-- Original coordinates: $(x, y)$
-- Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{22}, y'_{22})$
+The final feature matrix for each observation consists of: - Original coordinates: $(x, y)$ - Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{22}, y'_{22})$
 
 In total we have **46 features** for coordinate-rotated models (compared to 2 features for baseline models using only original coordinates).
 
@@ -242,14 +236,9 @@ In total we have **46 features** for coordinate-rotated models (compared to 2 fe
 
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
-**Models with Coordinate Rotation Variants**:
-- Random Forest (RF vs RF-CR)
-- XGBoost (XGB vs XGB-CR)
-- MixGBoost (MixGB vs MixGB-CR)
-- GAM (GAM vs GAM-CR)
+**Models with Coordinate Rotation Variants**: - Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
 
-The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms.
-### Geometric Interpretation
+The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. \### Geometric Interpretation
 
 From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
@@ -259,19 +248,18 @@ $$ (x - \bar{x}) \cos(\theta_j) - (y - \bar{y}) \sin(\theta_j) < c - \bar{x} $$
 
 This condition defines a linear decision boundary in the original space with slope tan(θⱼ). In this sense, coordinate rotation allows standard axis-aligned tree algorithms to approximate oblique splits without explicitly modifying the tree induction procedure.
 
-
 ### Implementation Details
 
-During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made [ASK OLIVIER]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 * (i / 23), The 23-th is the real one. 
+During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made \[ASK OLIVIER\]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 \* (i / 23), The 23-th is the real one.
 
 ## Experimental Setup and Evaluation Metrics
 
-Our benchmark evaluation follows a standardized protocol to ensure fair comparison across all algorithms and datasets. The experimental configuration is summarized in Table X below.
+Our benchmark evaluation follows a standardized protocol to ensure fair comparison across all algorithms and datasets. The experimental configuration is summarized in Table X below. For some of the functions that we used, to implement them we built wrappers code, something that could have increase the running time of our algorithms.
 
 **Table X: Benchmark Configuration**
 
 | Component | Specification | Description |
-|-----------|--------------|-------------|
+|---------------------|---------------------------|-------------------------|
 | **Train/Test Split** | 80% / 20% | Training set for model fitting, test set for performance evaluation |
 | **Random Seed** | 42 | Fixed seed for reproducible train/test splitting and model initialization |
 | **Test Size** | Variable by dataset | Small datasets: 5,000 points; Large datasets: 100,000 points |
@@ -285,17 +273,18 @@ Our benchmark evaluation follows a standardized protocol to ensure fair comparis
 
 We evaluate all models using three complementary metrics computed on the held-out test set:
 
-- **R² (Coefficient of Determination)**: Measures the proportion of variance in the target variable explained by the model. This metric is scale-invariant and provides an intuitive measure of overall model fit.
+-   **R² (Coefficient of Determination)**: Measures the proportion of variance in the target variable explained by the model. This metric is scale-invariant and provides an intuitive measure of overall model fit.
 
-- **RMSE (Root Mean Squared Error)**: Quantifies prediction error in the original units of the target variable. Penalizes large errors more heavily than small ones due to the squaring operation. Lower values indicate better performance.
+-   **RMSE (Root Mean Squared Error)**: Quantifies prediction error in the original units of the target variable. Penalizes large errors more heavily than small ones due to the squaring operation. Lower values indicate better performance.
 
-- **MAE (Mean Absolute Error)**: Measures average absolute prediction error in original units. More robust to outliers than RMSE. Lower values indicate better performance.
+-   **MAE (Mean Absolute Error)**: Measures average absolute prediction error in original units. More robust to outliers than RMSE. Lower values indicate better performance.
 
-- **Training Time**: Wall-clock time (in seconds) required for model fitting on the training set. Provides insight into computational efficiency and practical scalability.
+-   **Training Time**: Wall-clock time (in seconds) required for model fitting on the training set. Provides insight into computational efficiency and practical scalability.
 
 All metrics are computed on the test set to assess generalization performance on unseen data. For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
 
 # Results
+
 ```{python}
 #| echo: false
 import json
@@ -370,9 +359,9 @@ def get_model_color(model):
 
 ## Analysis per Category
 
-### Training Time 
+### Training Time
 
-This is comming first because it will determined, which dataset should be runnned for large data set based on the time spend for executing small datasets. 
+This is comming first because it will determined, which dataset should be runnned for large data set based on the time spend for executing small datasets.
 
 ```{python}
 #| echo: false
@@ -440,7 +429,7 @@ def create_fig_single_small_time_average():
 create_fig_single_small_time_average()
 ```
 
-Here we can see that determnistic algorithm are the faster, on the opposite GeoRF and GAM models seems to be very slow. Based on that, we decided to not run GAM and GeoRF on big dataset and see what is happening. Then we try to run the rests of algorithms on big dataset, and we remark that krigning is very very slow, that confirm a computationnal cost in O(n**3) and stops us from running this alorithm. Then, we can see how evolved the datasets movinf from small datasets to big. 
+Here we can see that determnistic algorithm are the faster, on the opposite GeoRF and GAM models seems to be very slow. Based on that, we decided to not run GAM and GeoRF on big dataset and see what is happening. Then we try to run the rests of algorithms on big dataset, and we remark that krigning is very very slow, that confirm a computationnal cost in O(n\*\*3) and stops us from running this alorithm. Then, we can see how evolved the datasets movinf from small datasets to big.
 
 ```{python}
 #| echo: false
@@ -517,9 +506,9 @@ def create_fig_speed_vs_scalability():
 create_fig_speed_vs_scalability()
 ```
 
-### Scalability 
+### Scalability
 
-Now that we see that it could be hard for some dataset we are going to try to see if increasing the size of the data could make some algorithm improving fatser than the other. Of course this comparison could be only apply to the one who have run on big and small datasets. 
+Now that we see that it could be hard for some dataset we are going to try to see if increasing the size of the data could make some algorithm improving fatser than the other. Of course this comparison could be only apply to the one who have run on big and small datasets.
 
 ```{python}
 #| echo: false
@@ -601,11 +590,11 @@ def create_fig_r2_scalability_dumbbell():
 create_fig_r2_scalability_dumbbell()
 ```
 
-Now that we see that large data set could make the R2 varying we are going to try to explain the other differnce by using only small datasets. 
+Now that we see that large data set could make the R2 varying we are going to try to explain the other differnce by using only small datasets.
 
-### Grid or real what is relevant ? 
+### Grid or real what is relevant ?
 
-We have seen that the grid could have some importance in the results 
+We have seen that the grid could have some importance in the results
 
 ```{python}
 #| echo: false
@@ -679,10 +668,9 @@ create_fig_side_by_side_delta()
 
 Comparison of results with and without rotation.
 
-
 ## Overall Performance
 
-A Big table to have synthtic data from the benchmark. 
+A Big table to have synthtic data from the benchmark.
 
 ```{python}
 #| echo: false
