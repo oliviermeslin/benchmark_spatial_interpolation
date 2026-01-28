@@ -296,6 +296,7 @@ We evaluate all models using three complementary metrics computed on the held-ou
 All metrics are computed on the test set to assess generalization performance on unseen data. For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
 
 # Results
+
 ```{python}
 #| echo: false
 import json
@@ -372,7 +373,7 @@ def get_model_color(model):
 
 ### Training Time 
 
-This is comming first because it will determined, which dataset should be runnned for large data set based on the time spend for executing small datasets. 
+Before evaluating predictive accuracy, it is essential to establish the computational feasibility of each algorithm. The following analysis focuses on training time across small datasets to determine which methods are suitable for large-scale applications. Deterministic models and traditional tree-based ensembles demonstrate near-instant execution, whereas geostatistical models like Kriging exhibit a significantly higher computational cost. This initial screening allows us to identify the subset of algorithms capable of scaling to millions of points, ensuring that our subsequent large-scale benchmarks remain computationally tractable.
 
 ```{python}
 #| echo: false
@@ -519,7 +520,7 @@ create_fig_speed_vs_scalability()
 
 ### Scalability 
 
-Now that we see that it could be hard for some dataset we are going to try to see if increasing the size of the data could make some algorithm improving fatser than the other. Of course this comparison could be only apply to the one who have run on big and small datasets. 
+Once the efficient algorithms are identified, we examine the "Size Effect" to determine if increasing the volume of data provides a significant return on investment in terms of R2. The transition from small to large datasets generally leads to a performance jump for all models, but the magnitude varies. 
 
 ```{python}
 #| echo: false
@@ -601,11 +602,11 @@ def create_fig_r2_scalability_dumbbell():
 create_fig_r2_scalability_dumbbell()
 ```
 
-Now that we see that large data set could make the R2 varying we are going to try to explain the other differnce by using only small datasets. 
+We observe that while deterministic models hit a performance ceiling fairly quickly, ensemble methods continue to refine their decision boundaries as more points are provided. This suggests that the higher computational cost of training a Random Forest or XGBoost on large data is justified by a superior ability to extract spatial details that sparse data cannot reveal.
 
 ### Grid or real what is relevant ? 
 
-We have seen that the grid could have some importance in the results 
+Beyond dataset size, the geometric arrangement of points plays a critical role in model performance. 
 
 ```{python}
 #| echo: false
@@ -675,7 +676,11 @@ def create_fig_side_by_side_delta():
 create_fig_side_by_side_delta()
 ```
 
+The comparison between structured grids and unstructured "no-grid" samples reveals a specific bias in tree-based algorithms toward axis-aligned structures. Similarly, the transition from synthetic stationary fields to complex real-world topography (RGE and BD ALTI) tests the robustness of the spatial correlation assumptions. Our findings indicate that while geostatistical methods are highly sensitive to the regularity of the grid for covariance estimation, ensemble methods are more resilient to irregular sampling, provided they are sufficiently tuned.
+
 ## Effects of Coordinate Rotation
+
+Having established the baseline behavior of the models, we turn to the primary focus of this study: the impact of Coordinate Rotation (CR). The evidence clearly indicates that CR consistently improves ensemble methods across nearly all dataset types. By projecting coordinates into a rotated space, we resolve the "staircase" effect inherent in standard decision trees. The scatter plot below demonstrates that for every individual dataset, the CR-enhanced versions of RF and XGBoost occupy a higher performance tier than their standard counterparts, confirming that this simple transformation is a powerful upgrade for spatial tasks.
 
 ```{python}
 #| echo: false
@@ -724,6 +729,8 @@ def create_fig_cr_vs_std_shapes():
 
 create_fig_cr_vs_std_shapes()
 ```
+
+A key question of this benchmark is whether CR allows ensemble methods to definitively replace deterministic algorithms across different categories. When comparing the "Best Deterministic" against "Best Ensemble CR" across real and synthetic categories, the ensembles demonstrate a clear and stable superiority. Even in unstructured "No-Grid" real-world data, where deterministic models traditionally hold ground due to their local-neighbor logic, the CR ensembles maintain near-perfect precision. This confirms that once the axis-aligned limitation is removed, ensemble methods become the most robust general-purpose interpolators in our suite.
 
 ```{python}
 #| echo: false
@@ -793,6 +800,7 @@ def create_fig_cr_vs_det_categorical_shapes():
 create_fig_cr_vs_det_categorical_shapes()
 ```
 
+The final consideration for Coordinate Rotation is its scalability. While adding a rotation step introduces a slight overhead, the scalability graph reveals that the "time penalty" is negligible compared to the massive gain in R2. The CR-enhanced models occupy the top-right quadrant of our efficiency frontier, offering the highest accuracy currently achievable for large-scale spatial data. Unlike deterministic methods that are fast but plateau at lower precision, CR ensembles scale their accuracy effectively as data size increases, making them the ideal choice for high-precision topographic modeling.
 
 ```{python}
 #| echo: false
@@ -834,8 +842,7 @@ create_fig_scalability_with_shapes()
 
 ## Overall Performance
 
-A Big table to have synthtic data from the benchmark. 
-
+To conclude the analysis, the global heatmap provides a unified view of all algorithms across all eight datasets. The separation between algorithm groups, marked by horizontal dividers, highlights the consistent dominance of the Advanced Tree and CR-enhanced Ensembles. While Kriging remains a strong competitor in specific synthetic grid scenarios, the Ensemblist + CR approach proves to be the most versatile, delivering high R2 scores regardless of whether the data is real, synthetic, large, or irregularly sampled.
 ```{python}
 #| echo: false
 
