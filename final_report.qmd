@@ -677,8 +677,160 @@ create_fig_side_by_side_delta()
 
 ## Effects of Coordinate Rotation
 
-Comparison of results with and without rotation.
+```{python}
+#| echo: false
 
+def create_fig_cr_vs_std_shapes():
+    """Graph 1: Standard vs CR with shapes for algorithms"""
+    tree_pairs = [
+        ('random_forest', 'random_forest_cr', 'o', 'RF'), 
+        ('xgboost', 'xgboost_cr', 's', 'XGB'), 
+        ('mixgboost', 'mixgboost_cr', 'D', 'MixGB')
+    ]
+    
+    plot_data = []
+    for std_key, cr_key, marker, name in tree_pairs:
+        for ds in datasets:
+            std_r2 = next((r['r2_score'] for r in results if r['model'] == std_key and r['dataset'] == ds), None)
+            cr_r2 = next((r['r2_score'] for r in results if r['model'] == cr_key and r['dataset'] == ds), None)
+            
+            if std_r2 is not None and cr_r2 is not None:
+                plot_data.append({
+                    'Standard': std_r2,
+                    'Rotated': cr_r2,
+                    'Algorithm': name,
+                    'Marker': marker
+                })
+
+    df = pd.DataFrame(plot_data)
+    fig, ax = plt.subplots(figsize=(9, 8))
+    
+    # y=x line
+    ax.plot([0.5, 1], [0.5, 1], color='red', linestyle='--', alpha=0.5, label='Equality (y=x)')
+    
+    # Plot each algorithm with its specific marker
+    for name, marker in [('RF', 'o'), ('XGB', 's'), ('MixGB', 'D')]:
+        sub = df[df['Algorithm'] == name]
+        ax.scatter(sub['Standard'], sub['Rotated'], marker=marker, color=color_tree, 
+                   s=100, edgecolor='black', label=f'{name} (Tree Group)', alpha=0.8)
+    
+    ax.set_title('Direct Impact of CR: Performance Gain per Dataset', fontweight='bold')
+    ax.set_xlabel('$R^2$ Standard version')
+    ax.set_ylabel('$R^2$ Rotated (CR) version')
+    ax.set_xlim(0.5, 1.01); ax.set_ylim(0.5, 1.01)
+    ax.grid(True, alpha=0.2)
+    ax.legend()
+    plt.show()
+
+create_fig_cr_vs_std_shapes()
+```
+
+```{python}
+#| echo: false
+
+def create_fig_cr_vs_det_categorical_shapes():
+    """Graph: CR Ensembles vs. Deterministic across Categories with shapes"""
+    
+    # 1. Define Categories and their associated datasets
+    categories = {
+        'Real Grid': ['rgealti_48', 'rgealti'],
+        'Real No-Grid': ['bdalti_48', 'bdalti'],
+        'Synth Grid': ['S-G-Sm', 'S-G-Lg'],
+        'Synth No-Grid': ['S-NG-Sm', 'S-NG-Lg']
+    }
+    
+    # 2. Define model configurations (Key, Color, Marker, Label)
+    models_config = [
+        ('knn_3', color_deterministic, 'x', 'KNN-3 (Det)'),
+        ('idw_p3', color_deterministic, '^', 'IDW-p3 (Det)'),
+        ('random_forest_cr', color_tree, 'o', 'RF-CR (Tree)'),
+        ('xgboost_cr', color_tree, 's', 'XGB-CR (Tree)'),
+        ('mixgboost_cr', color_tree, 'D', 'MixGB-CR (Tree)')
+    ]
+    
+    fig, ax = plt.subplots(figsize=(12, 7))
+    
+    # X-positions for categories
+    cat_names = list(categories.keys())
+    x_pos = np.arange(len(cat_names))
+    
+    # 3. Plotting
+    # We add a small jitter to avoid point overlap
+    for i, (cat_label, ds_list) in enumerate(categories.items()):
+        for m_key, m_color, m_marker, m_label in models_config:
+            # Get results for this model in this category
+            cat_results = [r['r2_score'] for r in results if r['model'] == m_key and r['dataset'] in ds_list]
+            
+            if cat_results:
+                # Add jitter based on model index
+                jitter = (models_config.index((m_key, m_color, m_marker, m_label)) - 2) * 0.05
+                # Label only once for the legend
+                is_first = (i == 0)
+                ax.scatter([i + jitter] * len(cat_results), cat_results, 
+                           marker=m_marker, color=m_color, s=100, 
+                           edgecolors='black', alpha=0.8, 
+                           label=m_label if is_first else "")
+
+    # 4. Aesthetics
+    ax.set_xticks(x_pos)
+    ax.set_xticklabels(cat_names, fontweight='bold')
+    ax.set_ylabel('$R^2$ Score', fontsize=12)
+    ax.set_title('Performance Stability: CR Ensembles vs. Deterministic Methods', fontsize=14, fontweight='bold', pad=20)
+    
+    ax.set_ylim(0.4, 1.05)
+    ax.grid(axis='y', linestyle='--', alpha=0.3)
+    
+    # Custom legend
+    ax.legend(title="Algorithms", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True)
+    
+    # Visual separators between categories
+    for x in x_pos[:-1]:
+        ax.axvline(x + 0.5, color='gray', alpha=0.1, linestyle='-')
+
+    plt.tight_layout()
+    plt.show()
+
+create_fig_cr_vs_det_categorical_shapes()
+```
+
+
+```{python}
+#| echo: false
+
+def create_fig_scalability_with_shapes():
+    """Graph 2: Efficiency Frontier with shapes for algorithms"""
+    # Define groups and markers
+    # Deterministic: Blue, Ensemble CR: Orange
+    models_config = [
+        ('knn_3', color_deterministic, 'x', 'KNN (Det)'),
+        ('idw_p3', color_deterministic, '^', 'IDW (Det)'),
+        ('random_forest_cr', color_tree, 'o', 'RF-CR'),
+        ('xgboost_cr', color_tree, 's', 'XGB-CR'),
+        ('mixgboost_cr', color_tree, 'D', 'MixGB-CR')
+    ]
+    
+    fig, ax = plt.subplots(figsize=(11, 7))
+    
+    for m_key, m_color, m_marker, m_label in models_config:
+        times = [r.get('training_time', 0.001) for r in results if r['model'] == m_key]
+        r2s = [r['r2_score'] for r in results if r['model'] == m_key]
+        
+        if times and r2s:
+            ax.scatter(times, r2s, marker=m_marker, color=m_color, s=120, 
+                       edgecolors='black', alpha=0.7, label=m_label)
+
+    ax.set_xscale('log')
+    ax.set_title('Scalability Landscape: Computational Cost vs. Precision', fontweight='bold')
+    ax.set_xlabel('Training Time (seconds) - Log Scale')
+    ax.set_ylabel('$R^2$ Score')
+    ax.set_ylim(0.4, 1.05)
+    ax.grid(True, which="both", ls="-", alpha=0.1)
+    ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.show()
+
+create_fig_scalability_with_shapes()
+```
 
 ## Overall Performance
 
