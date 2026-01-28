@@ -29,6 +29,7 @@ execute:
   warning: false
   message: false
 ---
+
 \begin{titlepage}
 \begin{center}
 \includegraphics[width=0.7\textwidth]{ensai_logo.png}\\[1.5 cm] 
@@ -164,7 +165,7 @@ Machine learning algorithms are fundamentally data-driven. They do not rely on f
 
 Tree-based ensemble methods build predictions through recursive partitioning of the feature space. Random Forest employs a bagging strategy, training multiple decision trees on bootstrap samples of the data and averaging their predictions to reduce variance. Each individual tree learns to partition the coordinate space by making binary splits that minimize prediction error within resulting regions. The averaging across many diverse trees produces stable, robust predictions. Gradient boosting methods, including XGBoost, HistGradientBoosting, and MixGBoost, take a different approach by building trees sequentially. Each new tree is trained to predict the residual errors of the existing ensemble, with the final prediction being a weighted sum of all trees. This iterative error correction often leads to higher accuracy than bagging, though it requires careful tuning to avoid overfitting.
 
-Oblique Random Forest extends the standard Random Forest framework by allowing decision boundaries that are not parallel to the coordinate axes. While standard trees make splits like "if x < threshold" or "if y < threshold", oblique trees can make diagonal splits such as "if a₁·x + a₂·y < threshold". This added flexibility can be particularly valuable for spatial data where patterns may not align with the coordinate system. GeoRF builds on Random Forest specifically for geographic applications, explicitly incorporating spatial information into the learning process while maintaining the ensemble tree framework.
+Oblique Random Forest extends the standard Random Forest framework by allowing decision boundaries that are not parallel to the coordinate axes. While standard trees make splits like "if x \< threshold" or "if y \< threshold", oblique trees can make diagonal splits such as "if a₁·x + a₂·y \< threshold". This added flexibility can be particularly valuable for spatial data where patterns may not align with the coordinate system. GeoRF builds on Random Forest specifically for geographic applications, explicitly incorporating spatial information into the learning process while maintaining the ensemble tree framework.
 
 GAM represents a distinct approach within the ML family. Rather than using trees, it models the target as a sum of smooth nonlinear functions of the input features. This additive structure maintains some interpretability while still capturing nonlinear effects, positioning GAM at the boundary between classical statistical modeling and modern machine learning.
 
@@ -184,10 +185,9 @@ Our benchmark reveals that these theoretical distinctions translate into tangibl
 
 ## Coordinate Rotation
 
-In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis.
-This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
+In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
 
-The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a  staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
+The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
 
 To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
@@ -232,9 +232,7 @@ This generates a set of rotated coordinate pairs $(x'_{ij}, y'_{ij})$ for each o
 
 **Step 4: Construct Augmented Feature Matrix**
 
-The final feature matrix for each observation consists of:
-- Original coordinates: $(x, y)$
-- Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{22}, y'_{22})$
+The final feature matrix for each observation consists of: - Original coordinates: $(x, y)$ - Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{22}, y'_{22})$
 
 In total we have **46 features** for coordinate-rotated models (compared to 2 features for baseline models using only original coordinates).
 
@@ -242,14 +240,9 @@ In total we have **46 features** for coordinate-rotated models (compared to 2 fe
 
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
-**Models with Coordinate Rotation Variants**:
-- Random Forest (RF vs RF-CR)
-- XGBoost (XGB vs XGB-CR)
-- MixGBoost (MixGB vs MixGB-CR)
-- GAM (GAM vs GAM-CR)
+**Models with Coordinate Rotation Variants**: - Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
 
-The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms.
-### Geometric Interpretation
+The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. \### Geometric Interpretation
 
 From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
@@ -259,10 +252,9 @@ $$ (x - \bar{x}) \cos(\theta_j) - (y - \bar{y}) \sin(\theta_j) < c - \bar{x} $$
 
 This condition defines a linear decision boundary in the original space with slope tan(θⱼ). In this sense, coordinate rotation allows standard axis-aligned tree algorithms to approximate oblique splits without explicitly modifying the tree induction procedure.
 
-
 ### Implementation Details
 
-During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made [ASK OLIVIER]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 * (i / 23), The 23-th is the real one. 
+During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made \[ASK OLIVIER\]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 \* (i / 23), The 23-th is the real one.
 
 ## Experimental Setup and Evaluation Metrics
 
@@ -271,7 +263,7 @@ Our benchmark evaluation follows a standardized protocol to ensure fair comparis
 **Table X: Benchmark Configuration**
 
 | Component | Specification | Description |
-|-----------|--------------|-------------|
+|---------------------|---------------------------|-------------------------|
 | **Train/Test Split** | 80% / 20% | Training set for model fitting, test set for performance evaluation |
 | **Random Seed** | 42 | Fixed seed for reproducible train/test splitting and model initialization |
 | **Test Size** | Variable by dataset | Small datasets: 5,000 points; Large datasets: 100,000 points |
@@ -285,13 +277,13 @@ Our benchmark evaluation follows a standardized protocol to ensure fair comparis
 
 We evaluate all models using three complementary metrics computed on the held-out test set:
 
-- **R² (Coefficient of Determination)**: Measures the proportion of variance in the target variable explained by the model. This metric is scale-invariant and provides an intuitive measure of overall model fit.
+-   **R² (Coefficient of Determination)**: Measures the proportion of variance in the target variable explained by the model. This metric is scale-invariant and provides an intuitive measure of overall model fit.
 
-- **RMSE (Root Mean Squared Error)**: Quantifies prediction error in the original units of the target variable. Penalizes large errors more heavily than small ones due to the squaring operation. Lower values indicate better performance.
+-   **RMSE (Root Mean Squared Error)**: Quantifies prediction error in the original units of the target variable. Penalizes large errors more heavily than small ones due to the squaring operation. Lower values indicate better performance.
 
-- **MAE (Mean Absolute Error)**: Measures average absolute prediction error in original units. More robust to outliers than RMSE. Lower values indicate better performance.
+-   **MAE (Mean Absolute Error)**: Measures average absolute prediction error in original units. More robust to outliers than RMSE. Lower values indicate better performance.
 
-- **Training Time**: Wall-clock time (in seconds) required for model fitting on the training set. Provides insight into computational efficiency and practical scalability.
+-   **Training Time**: Wall-clock time (in seconds) required for model fitting on the training set. Provides insight into computational efficiency and practical scalability.
 
 All metrics are computed on the test set to assess generalization performance on unseen data. For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
 
@@ -371,7 +363,7 @@ def get_model_color(model):
 
 ## Analysis per Category
 
-### Training Time 
+### Training Time
 
 Before evaluating predictive accuracy, it is essential to establish the computational feasibility of each algorithm. The following analysis focuses on training time across small datasets to determine which methods are suitable for large-scale applications. Deterministic models and traditional tree-based ensembles demonstrate near-instant execution, whereas geostatistical models like Kriging exhibit a significantly higher computational cost. This initial screening allows us to identify the subset of algorithms capable of scaling to millions of points, ensuring that our subsequent large-scale benchmarks remain computationally tractable.
 
@@ -441,7 +433,7 @@ def create_fig_single_small_time_average():
 create_fig_single_small_time_average()
 ```
 
-Here we can see that determnistic algorithm are the faster, on the opposite GeoRF and GAM models seems to be very slow. Based on that, we decided to not run GAM and GeoRF on big dataset and see what is happening. Then we try to run the rests of algorithms on big dataset, and we remark that krigning is very very slow, that confirm a computationnal cost in O(n**3) and stops us from running this alorithm. Then, we can see how evolved the datasets movinf from small datasets to big. 
+Here we can see that determnistic algorithm are the faster, on the opposite GeoRF and GAM models seems to be very slow. Based on that, we decided to not run GAM and GeoRF on big dataset and see what is happening. Then we try to run the rests of algorithms on big dataset, and we remark that krigning is very very slow, that confirm a computationnal cost in O(n\*\*3) and stops us from running this alorithm. Then, we can see how evolved the datasets movinf from small datasets to big.
 
 ```{python}
 #| echo: false
@@ -518,9 +510,9 @@ def create_fig_speed_vs_scalability():
 create_fig_speed_vs_scalability()
 ```
 
-### Scalability 
+### Scalability
 
-Once the efficient algorithms are identified, we examine the "Size Effect" to determine if increasing the volume of data provides a significant return on investment in terms of R2. The transition from small to large datasets generally leads to a performance jump for all models, but the magnitude varies. 
+Once the efficient algorithms are identified, we examine the "Size Effect" to determine if increasing the volume of data provides a significant return on investment in terms of R2. The transition from small to large datasets generally leads to a performance jump for all models, but the magnitude varies.
 
 ```{python}
 #| echo: false
@@ -604,9 +596,9 @@ create_fig_r2_scalability_dumbbell()
 
 We observe that while deterministic models hit a performance ceiling fairly quickly, ensemble methods continue to refine their decision boundaries as more points are provided. This suggests that the higher computational cost of training a Random Forest or XGBoost on large data is justified by a superior ability to extract spatial details that sparse data cannot reveal.
 
-### Grid or real what is relevant ? 
+### Grid or real what is relevant ?
 
-Beyond dataset size, the geometric arrangement of points plays a critical role in model performance. 
+Beyond dataset size, the geometric arrangement of points plays a critical role in model performance.
 
 ```{python}
 #| echo: false
@@ -843,6 +835,7 @@ create_fig_scalability_with_shapes()
 ## Overall Performance
 
 To conclude the analysis, the global heatmap provides a unified view of all algorithms across all eight datasets. The separation between algorithm groups, marked by horizontal dividers, highlights the consistent dominance of the Advanced Tree and CR-enhanced Ensembles. While Kriging remains a strong competitor in specific synthetic grid scenarios, the Ensemblist + CR approach proves to be the most versatile, delivering high R2 scores regardless of whether the data is real, synthetic, large, or irregularly sampled.
+
 ```{python}
 #| echo: false
 
@@ -909,25 +902,17 @@ create_fig1_r2_heatmap_final()
 
 # Discussion
 
-## Interpretation of Results
+The training time analysis confirms that deterministic models like IDW and KNN are nearly instantaneous, while advanced tree-based models and GAMs carry a significantly higher computational burden. The scalability analysis shows that while ensemblist methods generally improve as data size increases, they are often building upon a "staircase" logic that requires Coordinate Rotation (CR) to compete with the natural smoothness of other methods. Performance across grid and non-grid structures highlights a specific bias: tree-based algorithms struggle with patterns that don't align with coordinate axes unless they are heavily modified. Finally, the global heatmap illustrates that while CR-enhanced ensembles often reach the highest R^2^ values, deterministic methods maintain a high level of stability and competitive precision across almost all categories without the need for complex feature engineering.
 
-Explanation of observed performance patterns.
+The core problem was to determine if modern ensemble methods could effectively replace traditional spatial interpolators. While the data shows that Coordinate Rotation allows ensemblist methods to outperform baselines in sheer predictive power, the results are more balanced than they first appear. Deterministic methods offer a level of "out-of-the-box" reliability and local-neighbor logic that ensemble methods must work hard to replicate through rotation and deep tree structures. Therefore, the most effective algorithm depends entirely on the trade-off between the need for absolute precision and the desire for a simple, mathematically transparent model that doesn't require coordinate augmentation.
 
-## Practical Implications
+A significant limitation of this work is that the general datasets used may not capture the specific, high-frequency complex patterns where deterministic methods often excel due to their localized nature. Furthermore, the computational comparison is inherently biased because several algorithms rely on wraps for unmaintained or unoptimized packages, preventing them from reaching their true performance potential on our hardware. We are also limited by our reliance on R^2^ as the primary metric for the summary results. While R^2^ measures global variance, it can mask significant local errors that metrics like MAE or RMSE, which were calculated by the code but not fully explored in the main discussion, would reveal.
 
-Guidelines for practitioners choosing interpolation methods.
-
-## Limitations
-
-Discussion of methodological and computational limitations.
-
-## Future Work
-
-Possible extensions and improvements.
+To address these gaps, future research should zoom in on specific "geographic challenges," such as steep cliff faces or complex urban canyons, to see if deterministic methods provide better local fidelity than global ensemble models. We should also prioritize a more robust software implementation, moving away from unoptimized wrappers to native, high-performance libraries to ensure a fair "computational race" between families. Finally, a multi-metric evaluation strategy should be adopted. By integrating the MAE and RMSE data already provided by our experimental pipeline, we can provide a more holistic view of performance that accounts for both average error and the impact of extreme outliers.
 
 # Conclusion
 
-Summary of key findings and contributions.
+The integration of **Coordinate Rotation (CR)** into ensemble methods allows for excellent results using algorithms that were not originally specialized for spatial interpolation tasks. This constitutes a promising discovery, especially given that these machine learning methods are continuously evolving and improving. However, to truly determine if they can consistently provide superior results, it is necessary to test them against datasets exhibiting more complex spatial patterns than those used in this general benchmark. Furthermore, while these ensemblist models are somewhat more time-consuming to compute compared to deterministic baselines, they prove to be highly robust as the dataset size increases. This scalability ensures they remain a viable and powerful option for high-density geographic modeling where traditional methods fail.
 
 # References
 
