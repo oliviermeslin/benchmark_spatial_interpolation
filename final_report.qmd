@@ -1,6 +1,6 @@
 ---
 # Keep metadata here for HTML/Internal use
-title: "Benchmark Algorithm of Ensemblist Methods on Spatial Data"
+title: "Benchmark Algorithm of Ensemble Methods on Spatial Data"
 author:
   - "Bianco Andrea"
   - "Mancini Matteo"
