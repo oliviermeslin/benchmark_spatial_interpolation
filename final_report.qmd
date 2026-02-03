@@ -152,12 +152,9 @@ The structure of tree-based models implies that diagonal or curved boundaries mu
 
 To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
-The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applyng a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different represantions of the same space locations, unique for their rotation angle
+The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different representations of the same space locations, unique for their rotation angle.
 
 ### Algorithmic Procedure
-
-We applied the coordinate rotation following the steps described below.
-
 **Step 1: Compute the Spatial Centroid**
 
 For a training dataset with $n$ observations and coordinates $(x_i, y_i)$ for $i = 1, \ldots, n$, we first compute the centroid:
@@ -166,17 +163,13 @@ $$
 \bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i, \quad \bar{y} = \frac{1}{n}\sum_{i=1}^{n} y_i
 $$
 
-The choice of rotating around the centroid rather than around the origin is made to ensure numerical stability and to preserve the spatial distribution of the data.
-
 **Step 2: Define Rotation Angles**
 
-We generate a set of uniformly distributed rotation angles. For $k$ total axes (including the original coordinates), we use $k-1$ rotation angles:
+We generate a set of uniformly distributed rotation angles. For $k$ total axes, we use $k-1$ rotation angles:
 
 $$
 \theta_j = \frac{360° \cdot j}{k}, \quad j = 1, 2, \ldots, k-1
 $$
-
-In our implementation, we use $k = 23$ axes, yielding 22 rotation angles uniformly distributed across the full circle. This choice enables to have a sufficient angular resolution to capture patterns while keeping the computational cost low.
 
 **Step 3: Apply Rotation Transformations**
 
@@ -193,31 +186,20 @@ This generates a set of rotated coordinate pairs $(x'_{ij}, y'_{ij})$ for each o
 
 **Step 4: Construct Augmented Feature Matrix**
 
-The final feature matrix for each observation consists of: - Original coordinates: $(x, y)$ - Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{22}, y'_{22})$
-
-In total we have **46 features** for coordinate-rotated models (compared to 2 features for baseline models using only original coordinates).
+The final feature matrix for each observation consists of: Original coordinates: $(x, y)$ , Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{k-1}, y'_{k-1})$
 
 ### Model Selection for Coordinate Rotation
 
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
-**Models with Coordinate Rotation Variants**: - Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
+**Models with Coordinate Rotation Variants**: 
+- Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
 
 The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. 
 
 ### Geometric Interpretation
 
 From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
-
-This interpretation makes explicit the connection between coordinate rotation and oblique decision boundaries. An axis-aligned split applied to a rotated coordinate, such as $(x'_j < c)$, corresponds to an oblique split in the original coordinate system, which can be written as:
-
-$$ (x - \bar{x}) \cos(\theta_j) - (y - \bar{y}) \sin(\theta_j) < c - \bar{x} $$
-
-This condition defines a linear decision boundary in the original space with slope tan(θⱼ). In this sense, coordinate rotation allows standard axis-aligned tree algorithms to approximate oblique splits without explicitly modifying the tree induction procedure.
-
-### Implementation Details
-
-During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made \[ASK OLIVIER\]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 \* (i / 23), The 23-th is the real one.
 
 # Experimental Setup and Evaluation Metrics
 
