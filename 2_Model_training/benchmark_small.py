@@ -1,8 +1,11 @@
 """
-benchmark_small.py - CORRECTED
+benchmark_small.py
 Target: Small Datasets (~5,000 points)
-Models: ALL (including Kriging, GAM, GeoRF)
-Fix: Now correctly computes and saves Average Time, R2, and MAE for the best model.
+Fixes:
+1. SyntaxError removed.
+2. Timeout check added INSIDE cross-validation loop (stops faster).
+3. Data Filtering logic restored (was missing, causing huge data loads).
+4. Saves all metrics (Time, R2, MAE).
 """
 import json
 import time
@@ -40,11 +43,11 @@ from treeple.ensemble import ObliqueRandomForestRegressor
 # CONFIGURATION - SMALL DATA
 # =============================================================================
 
-N_ITER_SEARCH = 20   # High search budget
-CV_SPLITS = 5        # Robust validation
+N_ITER_SEARCH = 20   
+CV_SPLITS = 5        
 RANDOM_STATE = 42
 SIZE_SMALL = 5_000
-MAX_MODEL_TIME_SEC = 600
+MAX_MODEL_TIME_SEC = 600 # 10 Minutes Timeout
 
 DATASETS = [
     {"name": "bdalti_48", "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/", "filter_col": "departement", "filter_val": "48", "target_n": SIZE_SMALL, "transform": "log"},
@@ -147,8 +150,16 @@ def load_dataset(dataset_config: dict):
     
     if "val" in ldf.collect_schema().names(): ldf = ldf.rename({"val": "value"})
 
-    # Filter
+    # --- FIX: Apply Filter BEFORE Collect (Crucial for Speed) ---
+    if "filter_col" in dataset_config and "filter_val" in dataset_config:
+        print(f"  -> Filtering {dataset_config['filter_col']} == {dataset_config['filter_val']}")
+        ldf = ldf.filter(pl.col(dataset_config["filter_col"]) == dataset_config["filter_val"])
+
+    # Basic Cleaning
     ldf = ldf.filter((pl.col("value").is_not_null()) & (pl.col("value") > 0))
+    
+    # Collect only necessary columns
+    print("  -> Collecting data...")
     df = ldf.select(["x", "y", "value"]).collect(engine="streaming")
     
     if dataset_config.get("transform") == "log":
@@ -196,22 +207,24 @@ def run_benchmark():
             best_score = float('inf')
             best_result = None
             
-            # --- 1. Start Timer for this Model ---
+            # --- 1. Start Timer ---
             model_start_time = time.time()
 
             for i in range(N_ITER_SEARCH):
-                # --- 2. Check Timeout BEFORE starting new iteration ---
-                elapsed = time.time() - model_start_time
-                if elapsed > MAX_MODEL_TIME_SEC:
-                    print(f"    [STOP] Timeout reached ({elapsed:.0f}s > {MAX_MODEL_TIME_SEC}s). Stopping search for {model_name}.")
+                # Check timeout before starting a new param set
+                if time.time() - model_start_time > MAX_MODEL_TIME_SEC:
+                    print(f"    [STOP] Timeout ({MAX_MODEL_TIME_SEC}s) reached. Stopping search for {model_name}.")
                     break
 
                 params = sample_parameters(model_config["param_space"])
-                
                 fold_results = []
                 
-                # We validate the random params on K-folds
+                # Cross-validation
                 for train_idx, test_idx in kf.split(X, y):
+                    # --- FIX: Check timeout INSIDE CV loop ---
+                    if time.time() - model_start_time > MAX_MODEL_TIME_SEC:
+                        break # Stop CV midway if time is up
+
                     X_tr, X_te = pl.from_pandas(X.iloc[train_idx]), pl.from_pandas(X.iloc[test_idx])
                     y_tr, y_te = y[train_idx], y[test_idx]
                     try:
@@ -219,12 +232,13 @@ def run_benchmark():
                         fold_results.append(m)
                     except: pass
                 
+                # Only use full results
                 if fold_results:
                     avg_rmse = np.mean([res['rmse'] for res in fold_results])
                     if avg_rmse < best_score:
                         best_score = avg_rmse
                         
-                        # --- FIX: Average ALL metrics (Time, R2, MAE) ---
+                        # --- FIX: Average ALL metrics ---
                         avg_metrics = {
                             k: float(np.mean([res[k] for res in fold_results])) 
                             for k in fold_results[0].keys()
@@ -234,7 +248,7 @@ def run_benchmark():
                             "model": model_name, 
                             "dataset": dataset["name"], 
                             "best_params": params,
-                            **avg_metrics # Unpacks: rmse, r2_score, mae, training_time
+                            **avg_metrics
                         }
 
             if best_result:

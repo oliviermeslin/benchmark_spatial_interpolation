@@ -215,10 +215,6 @@ $$ (x - \bar{x}) \cos(\theta_j) - (y - \bar{y}) \sin(\theta_j) < c - \bar{x} $$
 
 This condition defines a linear decision boundary in the original space with slope tan(θⱼ). In this sense, coordinate rotation allows standard axis-aligned tree algorithms to approximate oblique splits without explicitly modifying the tree induction procedure.
 
-### Implementation Details
-
-During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made \[ASK OLIVIER\]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 \* (i / 23), The 23-th is the real one.
-
 # Experimental Setup and Evaluation Metrics
 
 ## Datasets
@@ -273,14 +269,14 @@ We evaluate all models using three complementary metrics computed on the held-ou
 
 ## Benchmark Procedure  
 
-All experiments were conducted in a **Python 3.13** environment (utilizing scikit-learn, XGBoost, PyKrige, and others) hosted on **SSPCloud** infrastructure, with full parallelization enabled (`n_jobs=-1`). To ensure reproducibility, a fixed **random seed of 42** was applied to an **80/20 train-test split**, resulting in test sets of 5,000 points for small datasets and 100,000 points for large datasets. Preprocessing strategies included **log-transforming** skewed elevation targets and applying a **23-angle coordinate rotation** for tree-based models.
+All experiments ran in a Python 3.13 environment on SSPCloud with full parallelization (n_jobs=-1). To ensure reproducibility, a fixed random seed of 42 was applied across all generators. Data preprocessing included log-transforming skewed elevation targets and applying a 23-angle Coordinate Rotation (CR) for tree-based models to mitigate orthogonal split biases.
 
-Our benchmark evaluation follows a standardized protocol to ensure fair comparison across all algorithms and datasets. This procedure is a double loop on both datasets and algorithms. All metrics are computed on the test set to assess generalization performance on unseen data. For some of the functions that we used, to implement them we built wrappers code, something that could have increase the running time of our algorithms.
-
-For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
+Our validation strategy employs a robust Randomized Search with K-Fold Cross-Validation. The procedure iterates through datasets and algorithms (a double loop), randomly sampling hyperparameter spaces. Each configuration is evaluated across K folds, with the "Best Model" selected based on the lowest average RMSE. We adapted tuning intensity to dataset size: high-intensity search (20 iterations, 5-fold, 10-min timeout) for small data, and an efficiency-focused regime (5 iterations, 3-fold) for large data.
 
 
 # Results
+
+The study follows a two-phase selection process. First, we benchmark all algorithm families on small datasets (N≈5,000) to map the initial trade-offs between precision and computational cost. Based on these results, we pre-select the most efficient candidates to undergo stress testing on large datasets (N≈100,000) and noisy scenarios (synthetic noise and real-world housing data), assessing their true scalability and robustness in difficult conditions.
 
 ```{python}
 #| echo: false
