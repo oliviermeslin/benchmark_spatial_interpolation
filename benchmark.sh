@@ -40,13 +40,13 @@ fi
 # 3. Render Quarto Report
 # ---------------------------------------------------------
 echo "Step 3: Rendering Quarto report to PDF..."
-quarto render "$WORK_DIR/final_report.qmd" --to pdf
+quarto render "$WORK_DIR/report_rod.qmd" --to pdf
 
 # ---------------------------------------------------------
 # 4. Upload Report to S3
 # ---------------------------------------------------------
 echo "Step 4: Uploading final report to S3..."
-REPORT_PDF="$WORK_DIR/final_report.pdf"
+REPORT_PDF="$WORK_DIR/report_rod.pdf"
 
 if [ -f "$REPORT_PDF" ]; then
     aws s3 cp "$REPORT_PDF" "$S3_REPORTS"

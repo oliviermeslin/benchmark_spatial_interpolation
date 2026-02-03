@@ -1,15 +1,14 @@
 """
-benchmark_small.py
+benchmark_small.py - CORRECTED
 Target: Small Datasets (~5,000 points)
 Models: ALL (including Kriging, GAM, GeoRF)
-Tuning: High intensity (20 iterations, 5 folds)
+Fix: Now correctly computes and saves Average Time, R2, and MAE for the best model.
 """
 import json
 import time
 import gc
 import random
 import sys
-from datetime import datetime
 from pathlib import Path
 import polars as pl
 import numpy as np
@@ -45,88 +44,46 @@ N_ITER_SEARCH = 20   # High search budget
 CV_SPLITS = 5        # Robust validation
 RANDOM_STATE = 42
 SIZE_SMALL = 5_000
+MAX_MODEL_TIME_SEC = 600
 
 DATASETS = [
-    # --- Real Small ---
-    {
-        "name": "bdalti_48",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48",
-        "target_n": SIZE_SMALL, "transform": "log"
-    },
-    {
-        "name": "rgealti_48",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-        "filter_col": "departement", "filter_val": "48",
-        "target_n": SIZE_SMALL, "transform": "log"
-    },
-    # --- Synthetic Small ---
+    {"name": "bdalti_48", "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/", "filter_col": "departement", "filter_val": "48", "target_n": SIZE_SMALL, "transform": "log"},
+    {"name": "rgealti_48", "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/", "filter_col": "departement", "filter_val": "48", "target_n": SIZE_SMALL, "transform": "log"},
     {"name": "S-G-Sm", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Sm.parquet", "target_n": SIZE_SMALL},
     {"name": "S-NG-Sm", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Sm.parquet", "target_n": SIZE_SMALL},
 ]
 
 MODELS = [
-    # --- Ensembles (RF, XGB, MixGB) ---
     {
         "name": "random_forest",
         "class": RandomForestRegressor,
         "number_axis": 1,
-        "param_space": {
-            "n_estimators": [100, 200, 300, 500],
-            "max_features": ["sqrt", "log2", 1.0],
-            "min_samples_leaf": [1, 3, 5],
-            "n_jobs": [-1], "random_state": [42]
-        }
+        "param_space": {"n_estimators": [100, 200, 300, 500], "max_features": ["sqrt", "log2", 1.0], "min_samples_leaf": [1, 3, 5], "n_jobs": [-1], "random_state": [42]}
     },
     {
         "name": "random_forest_cr",
         "class": RandomForestRegressor,
         "number_axis": 23,
-        "param_space": {
-            "n_estimators": [100, 200, 300],
-            "max_features": ["sqrt", "log2"],
-            "min_samples_leaf": [1, 3, 5],
-            "n_jobs": [-1], "random_state": [42]
-        }
+        "param_space": {"n_estimators": [100, 200, 300], "max_features": ["sqrt", "log2"], "min_samples_leaf": [1, 3, 5], "n_jobs": [-1], "random_state": [42]}
     },
     {
         "name": "xgboost",
         "class": xgboost.XGBRegressor,
         "number_axis": 1,
-        "param_space": {
-            "n_estimators": [200, 500, 1000],
-            "learning_rate": [0.01, 0.05, 0.1, 0.2],
-            "max_depth": [4, 6, 8, 10],
-            "subsample": [0.7, 0.8, 1.0],
-            "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]
-        }
+        "param_space": {"n_estimators": [200, 500, 1000], "learning_rate": [0.01, 0.05, 0.1, 0.2], "max_depth": [4, 6, 8, 10], "subsample": [0.7, 0.8, 1.0], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
     },
     {
         "name": "xgboost_cr",
         "class": xgboost.XGBRegressor,
         "number_axis": 23,
-        "param_space": {
-            "n_estimators": [200, 500, 1000],
-            "learning_rate": [0.01, 0.05, 0.1],
-            "max_depth": [4, 6, 8, 10],
-            "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]
-        }
+        "param_space": {"n_estimators": [200, 500, 1000], "learning_rate": [0.01, 0.05, 0.1], "max_depth": [4, 6, 8, 10], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
     },
     {
         "name": "mixgboost_cr",
         "class": SklearnMIXGBooster,
         "number_axis": 23,
-        "param_space": {
-            "k": [10, 20, 40],
-            "lamb": [0.01, 0.1, 0.5],
-            "learning_rate": [0.05, 0.1],
-            "n_estimators": [200, 500],
-            "max_depth": [6, 10, 12],
-            "n_jobs": [-1]
-        }
+        "param_space": {"k": [10, 20, 40], "lamb": [0.01, 0.1, 0.5], "learning_rate": [0.05, 0.1], "n_estimators": [200, 500], "max_depth": [6, 10, 12], "n_jobs": [-1]}
     },
-    
-    # --- Advanced Trees (Oblique, GeoRF) ---
     {
         "name": "oblique_rf",
         "class": ObliqueRandomForestRegressor,
@@ -139,8 +96,6 @@ MODELS = [
         "number_axis": 1,
         "param_space": {"n_estimators": [50, 100], "max_depth": [10, 20], "max_features": [2], "n_jobs": [1], "random_state": [42]}
     },
-
-    # --- Geostatistical / GAM (Included only for Small) ---
     {
         "name": "kriging",
         "class": PyKrigeWrapper,
@@ -148,13 +103,17 @@ MODELS = [
         "param_space": {"variogram_model": ["linear", "power", "gaussian", "exponential"], "nlags": [6, 10, 20], "weight": [True, False]}
     },
     {
+        "name": "gam",
+        "class": PyGAMWrapper,
+        "number_axis": 1,
+        "param_space": {"n_splines": [15, 25, 50], "lam": [0.1, 0.6, 2.0], "spline_order": [3]}
+    },
+    {
         "name": "gam_cr",
         "class": PyGAMWrapper,
         "number_axis": 23,
         "param_space": {"n_splines": [15, 25, 50], "lam": [0.1, 0.6, 2.0], "spline_order": [3]}
     },
-
-    # --- Baselines ---
     {
         "name": "knn_3",
         "class": KNeighborsRegressor,
@@ -222,7 +181,6 @@ def run_single_fit(model_class, params, number_axis, X_train_pl, y_train, X_test
 def run_benchmark():
     results = []
     kf = KFold(n_splits=CV_SPLITS, shuffle=True, random_state=RANDOM_STATE)
-    
 
     for dataset in DATASETS:
         print(f"\n=== [Small] Processing {dataset['name']} ===")
@@ -237,30 +195,56 @@ def run_benchmark():
             
             best_score = float('inf')
             best_result = None
+            
+            # --- 1. Start Timer for this Model ---
+            model_start_time = time.time()
 
             for i in range(N_ITER_SEARCH):
+                # --- 2. Check Timeout BEFORE starting new iteration ---
+                elapsed = time.time() - model_start_time
+                if elapsed > MAX_MODEL_TIME_SEC:
+                    print(f"    [STOP] Timeout reached ({elapsed:.0f}s > {MAX_MODEL_TIME_SEC}s). Stopping search for {model_name}.")
+                    break
+
                 params = sample_parameters(model_config["param_space"])
-                fold_scores = []
                 
+                fold_results = []
+                
+                # We validate the random params on K-folds
                 for train_idx, test_idx in kf.split(X, y):
                     X_tr, X_te = pl.from_pandas(X.iloc[train_idx]), pl.from_pandas(X.iloc[test_idx])
                     y_tr, y_te = y[train_idx], y[test_idx]
                     try:
                         m = run_single_fit(model_config["class"], params, model_config.get("number_axis", 1), X_tr, y_tr, X_te, y_te)
-                        fold_scores.append(m['rmse'])
+                        fold_results.append(m)
                     except: pass
                 
-                if fold_scores:
-                    avg_rmse = np.mean(fold_scores)
+                if fold_results:
+                    avg_rmse = np.mean([res['rmse'] for res in fold_results])
                     if avg_rmse < best_score:
                         best_score = avg_rmse
-                        best_result = {"model": model_name, "dataset": dataset["name"], "rmse": avg_rmse, "best_params": params}
+                        
+                        # --- FIX: Average ALL metrics (Time, R2, MAE) ---
+                        avg_metrics = {
+                            k: float(np.mean([res[k] for res in fold_results])) 
+                            for k in fold_results[0].keys()
+                        }
+                        
+                        best_result = {
+                            "model": model_name, 
+                            "dataset": dataset["name"], 
+                            "best_params": params,
+                            **avg_metrics # Unpacks: rmse, r2_score, mae, training_time
+                        }
 
             if best_result:
-                print(f"    -> WINNER: RMSE {best_result['rmse']:.4f}")
+                print(f"    -> WINNER: RMSE {best_result['rmse']:.4f} | Time: {best_result['training_time']:.2f}s")
                 results.append(best_result)
 
-    with open("results/results_small.json", "w") as f: json.dump(results, f, indent=2)
+    output_path = Path("results/results_small.json")
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
 
 if __name__ == "__main__":
     run_benchmark()

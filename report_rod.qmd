@@ -473,6 +473,9 @@ Consequently, only the **Ensemble** and **Deterministic** families are advanced 
 
 ## 2. Who is the Better?
 
+The error arises because the code encounters the string `"NA"` (which we assigned to models that didn't run on large data but weren't explicitly in the "Too Slow" list) and tries to convert it to a float.
+
+
 ### 2.1 The Quickest? (Training Time Scalability)
 
 Moving from 5,000 to 100,000 points represents a 20x increase in data volume. The table below details the "Time Augmentation" cost. We define the **Scalability Cost** as the ratio .
@@ -487,32 +490,43 @@ def create_table_time_scalability_v2():
     table_data = []
     
     for m_key in model_names.keys():
+        # Use .get('training_time', 0) to prevent KeyErrors
         times_sm = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in small_ds]
         times_lg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in large_ds]
         
         if times_sm:
             avg_sm = np.mean(times_sm)
+            
             if m_key in exclude_large:
                 avg_lg_str = "Too Slow"
                 ratio_str = "-"
+                sort_val = 9999.0
             elif times_lg:
                 avg_lg = np.mean(times_lg)
-                avg_lg_str = f"{avg_lg:.2f}s"
-                ratio = avg_lg / avg_sm if avg_sm > 0 else 0
-                ratio_str = f"{ratio:.1f}x"
+                if avg_lg > 0:
+                    avg_lg_str = f"{avg_lg:.2f}s"
+                    ratio = avg_lg / avg_sm if avg_sm > 0 else 0
+                    ratio_str = f"{ratio:.1f}x"
+                    sort_val = avg_lg
+                else:
+                    # Time is 0 or missing in data
+                    avg_lg_str = "N/A" 
+                    ratio_str = "-"
+                    sort_val = 9999.0
             else:
                 avg_lg_str = "NA"
                 ratio_str = "-"
+                sort_val = 9999.0
 
             table_data.append({
                 'Model': model_names[m_key],
                 'Avg Time (Small)': f"{avg_sm:.3f}s",
                 'Avg Time (Large)': avg_lg_str,
-                'Augmentation Factor': ratio_str
+                'Augmentation Factor': ratio_str,
+                'sort_helper': sort_val
             })
             
     df = pd.DataFrame(table_data)
-    df['sort_helper'] = df['Avg Time (Large)'].apply(lambda x: 9999 if x == "Too Slow" else float(x.replace('s','')))
     df = df.sort_values('sort_helper').drop('sort_helper', axis=1)
     
     return df
@@ -523,7 +537,9 @@ display(create_table_time_scalability_v2())
 
 ### 2.2 What about Precision? (Coordinates Rotation)
 
-With computational feasibility established, we analyze the impact of **Coordinate Rotation (CR)** on these large datasets. The plot below compares the standard version of each ensemble algorithm against its CR counterpart. Points above the red dashed line indicate that CR improved the  score.
+With computational feasibility established, we analyze the impact of **Coordinate Rotation (CR)** on these large datasets.  By rotating the spatial axes, we expose new split opportunities to the decision trees, effectively reducing the "staircase" effect inherent in orthogonal splits.
+
+The plot below compares the standard version of each ensemble algorithm against its CR counterpart. Points above the red dashed line indicate that CR improved the  score.
 
 ```{python}
 #| echo: false
@@ -543,12 +559,18 @@ def create_fig_cr_impact_large():
             cr_res = next((r for r in results if r['model'] == cr_key and r['dataset'] == ds), None)
             
             if std_res and cr_res:
-                plot_data.append({
-                    'Standard': std_res['r2_score'],
-                    'Rotated': cr_res['r2_score'],
-                    'Algorithm': name,
-                    'Marker': marker
-                })
+                # Use .get() to avoid KeyError if the metric is missing
+                std_r2 = std_res.get('r2_score')
+                cr_r2 = cr_res.get('r2_score')
+                
+                # Only plot if both scores exist and are valid numbers
+                if std_r2 is not None and cr_r2 is not None:
+                    plot_data.append({
+                        'Standard': std_r2,
+                        'Rotated': cr_r2,
+                        'Algorithm': name,
+                        'Marker': marker
+                    })
 
     if not plot_data:
         # Fallback if no data is found (to avoid empty plot errors)
@@ -561,8 +583,9 @@ def create_fig_cr_impact_large():
     
     for name, marker in [('RF', 'o'), ('XGB', 's'), ('MixGB', 'D')]:
         sub = df[df['Algorithm'] == name]
-        ax.scatter(sub['Standard'], sub['Rotated'], marker=marker, color=color_tree, 
-                   s=120, edgecolor='black', label=name, alpha=0.9)
+        if not sub.empty:
+            ax.scatter(sub['Standard'], sub['Rotated'], marker=marker, color=color_tree, 
+                       s=120, edgecolor='black', label=name, alpha=0.9)
     
     ax.set_title('Impact of CR on Large Datasets', fontweight='bold')
     ax.set_xlabel('$R^2$ (Standard)')

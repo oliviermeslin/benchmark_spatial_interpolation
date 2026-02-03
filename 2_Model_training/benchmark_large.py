@@ -1,9 +1,7 @@
 """
-benchmark_large.py
+benchmark_large.py - CORRECTED
 Target: Large Datasets (~100,000 points) & Noisy Datasets
-Models: Scalable Ensembles ONLY (RF, XGB, MixGB, KNN)
-        *EXCLUDED*: Kriging, GAM, GeoRF
-Tuning: Reduced intensity (5 iterations, 3 folds)
+Fix: Removed invalid syntax and ensures all metrics (Time, R2, MAE) are saved.
 """
 import json
 import time
@@ -24,7 +22,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.neighbors import KNeighborsRegressor
 import xgboost
 
-# Custom Utils
 from utils.migbt import SklearnMIXGBooster
 from utils.functions import AddCoordinatesRotation, ConvertToPandas
 from utils.s3 import get_df_from_s3
@@ -33,102 +30,54 @@ apply_treeple_patch()
 from treeple.ensemble import ObliqueRandomForestRegressor
 
 # =============================================================================
-# CONFIGURATION - LARGE & NOISY DATA
+# CONFIGURATION
 # =============================================================================
 
-N_ITER_SEARCH = 5    # Reduced for speed
-CV_SPLITS = 3        # Reduced for speed
+N_ITER_SEARCH = 5
+CV_SPLITS = 3
 RANDOM_STATE = 42
 SIZE_LARGE = 100_000
 
 DATASETS = [
-    # --- 1. Real Large (Clean-ish) ---
-    {
-        "name": "rgealti",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/",
-        "target_n": SIZE_LARGE, "transform": "log"
-    },
-    {
-        "name": "bdalti",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/",
-        "target_n": SIZE_LARGE, "transform": "log"
-    },
-    
-    # --- 2. Real Noisy (Housing) ---
-    {
-        "name": "cal_housing",
-        "path": "s3://projet-benchmark-spatial-interpolation/data/real/HOUSING/california_housing.parquet",
-        "target_n": 25000, # Take all (dataset is ~20k)
-        "noisy": True
-    },
-
-    # --- 3. Synthetic Large (Clean) ---
+    {"name": "rgealti", "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/", "target_n": SIZE_LARGE, "transform": "log"},
+    {"name": "bdalti", "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/", "target_n": SIZE_LARGE, "transform": "log"},
+    {"name": "cal_housing", "path": "s3://projet-benchmark-spatial-interpolation/data/real/HOUSING/california_housing.parquet", "target_n": 25000, "noisy": True},
     {"name": "S-G-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet", "target_n": SIZE_LARGE},
     {"name": "S-NG-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet", "target_n": SIZE_LARGE},
-
-    # --- 4. Synthetic Large (Noisy) ---
     {"name": "S-G-Lg-N", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg-N.parquet", "target_n": SIZE_LARGE, "noisy": True},
     {"name": "S-NG-Lg-N", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg-N.parquet", "target_n": SIZE_LARGE, "noisy": True},
 ]
 
 MODELS = [
-    # --- Scalable Ensembles Only ---
     {
         "name": "random_forest",
         "class": RandomForestRegressor,
         "number_axis": 1,
-        "param_space": {
-            "n_estimators": [150, 250],
-            "max_features": ["sqrt"],
-            "min_samples_leaf": [5, 10], # Higher leaf count for speed
-            "n_jobs": [-1], "random_state": [42]
-        }
+        "param_space": {"n_estimators": [150, 250], "max_features": ["sqrt"], "min_samples_leaf": [5, 10], "n_jobs": [-1], "random_state": [42]}
     },
     {
         "name": "random_forest_cr",
         "class": RandomForestRegressor,
         "number_axis": 23,
-        "param_space": {
-            "n_estimators": [150, 250],
-            "max_features": ["sqrt"],
-            "min_samples_leaf": [5, 10],
-            "n_jobs": [-1], "random_state": [42]
-        }
+        "param_space": {"n_estimators": [150, 250], "max_features": ["sqrt"], "min_samples_leaf": [5, 10], "n_jobs": [-1], "random_state": [42]}
     },
     {
         "name": "xgboost",
         "class": xgboost.XGBRegressor,
         "number_axis": 1,
-        "param_space": {
-            "n_estimators": [300, 500],
-            "learning_rate": [0.05, 0.1],
-            "max_depth": [6, 8],
-            "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]
-        }
+        "param_space": {"n_estimators": [300, 500], "learning_rate": [0.05, 0.1], "max_depth": [6, 8], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
     },
     {
         "name": "xgboost_cr",
         "class": xgboost.XGBRegressor,
         "number_axis": 23,
-        "param_space": {
-            "n_estimators": [300, 500],
-            "learning_rate": [0.05, 0.1],
-            "max_depth": [6, 8],
-            "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]
-        }
+        "param_space": {"n_estimators": [300, 500], "learning_rate": [0.05, 0.1], "max_depth": [6, 8], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
     },
     {
         "name": "mixgboost_cr",
         "class": SklearnMIXGBooster,
         "number_axis": 23,
-        "param_space": {
-            "k": [20],
-            "lamb": [0.05],
-            "learning_rate": [0.1],
-            "n_estimators": [300],
-            "max_depth": [8],
-            "n_jobs": [-1]
-        }
+        "param_space": {"k": [20], "lamb": [0.05], "learning_rate": [0.1], "n_estimators": [300], "max_depth": [8], "n_jobs": [-1]}
     },
     {
         "name": "oblique_rf",
@@ -136,7 +85,6 @@ MODELS = [
         "number_axis": 1,
         "param_space": {"n_estimators": [100], "max_features": [1.0], "max_depth": [15], "n_jobs": [-1]}
     },
-    # --- Baselines ---
     {
         "name": "knn_3",
         "class": KNeighborsRegressor,
@@ -163,15 +111,11 @@ def load_dataset(dataset_config: dict):
     target_n = dataset_config.get("target_n", 100_000)
     
     if "val" in ldf.collect_schema().names(): ldf = ldf.rename({"val": "value"})
-
-    # Slice for speed loading if huge (like RGEALTI)
     if "rgealti" in dataset_config["name"]: ldf = ldf.slice(0, 1_000_000)
 
-    # Filter
     ldf = ldf.filter((pl.col("value").is_not_null()) & (pl.col("value") > 0))
     df = ldf.select(["x", "y", "value"]).collect(engine="streaming")
     
-    # Log transform only if requested (Synthetic & Housing usually don't need it or use it differently)
     if dataset_config.get("transform") == "log":
         df = df.with_columns(pl.col("value").log())
         
@@ -202,8 +146,6 @@ def run_single_fit(model_class, params, number_axis, X_train_pl, y_train, X_test
 def run_benchmark():
     results = []
     kf = KFold(n_splits=CV_SPLITS, shuffle=True, random_state=RANDOM_STATE)
-    
-    
 
     for dataset in DATASETS:
         print(f"\n=== [Large/Noisy] Processing {dataset['name']} ===")
@@ -221,33 +163,47 @@ def run_benchmark():
 
             for i in range(N_ITER_SEARCH):
                 params = sample_parameters(model_config["param_space"])
-                fold_scores = []
+                
+                # Store ALL metrics for every fold
+                fold_results = [] 
                 
                 for train_idx, test_idx in kf.split(X, y):
                     X_tr, X_te = pl.from_pandas(X.iloc[train_idx]), pl.from_pandas(X.iloc[test_idx])
                     y_tr, y_te = y[train_idx], y[test_idx]
                     try:
                         m = run_single_fit(model_config["class"], params, model_config.get("number_axis", 1), X_tr, y_tr, X_te, y_te)
-                        fold_scores.append(m['rmse'])
+                        fold_results.append(m)
                     except: pass
                 
-                if fold_scores:
-                    avg_rmse = np.mean(fold_scores)
+                if fold_results:
+                    # Calculate average RMSE to decide if this is the best model
+                    avg_rmse = np.mean([res['rmse'] for res in fold_results])
+                    
                     if avg_rmse < best_score:
                         best_score = avg_rmse
+                        
+                        # Calculate averages for ALL metrics (Time, R2, MAE)
+                        avg_metrics = {
+                            k: float(np.mean([res[k] for res in fold_results])) 
+                            for k in fold_results[0].keys()
+                        }
+                        
                         best_result = {
                             "model": model_name, 
                             "dataset": dataset["name"], 
-                            "rmse": avg_rmse, 
                             "best_params": params,
-                            "noisy_flag": dataset.get("noisy", False)
+                            "noisy_flag": dataset.get("noisy", False),
+                            **avg_metrics # Unpacks: rmse, r2_score, mae, training_time
                         }
 
             if best_result:
-                print(f"    -> WINNER: RMSE {best_result['rmse']:.4f}")
+                print(f"    -> WINNER: RMSE {best_result['rmse']:.4f} | Time: {best_result['training_time']:.2f}s")
                 results.append(best_result)
 
-    with open("results/results_large_noisy.json", "w") as f: json.dump(results, f, indent=2)
+    output_path = Path("results/results_large_noisy.json")
+    output_path.parent.mkdir(exist_ok=True, parents=True)
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
 
 if __name__ == "__main__":
     run_benchmark()
