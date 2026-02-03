@@ -74,41 +74,6 @@ Much of this research is motivated by the proposition that coordinate rotation c
 
 To achieve a robust evaluation, this study examines eight datasets comprising both real-world topographic data and synthetic stationary random fields. We compare a dozen distinct algorithms, ranging from k-nearest neighbors and kriging to advanced tree-based variants and generalized additive models. By analyzing these results across varied conditions, such as grid versus non-grid structures and small versus large sample sizes, this report seeks to provide a definitive comparison that guides practitioners in choosing the most efficient method for their specific spatial interpolation needs.
 
-# Datasets
-
-There will be 8 datasets to cover combinations of:
-
--   **Real or Synthetic**
--   **Large or Small**
--   **Grid or No Grid**
-
-For the **synthetic ones**, they are built following the idea that we need some data spatially correlated, be able to respect our different criteria:
-
--   **Spatial Correlation**: We use a **Matérn covariance model** (dimension=2, variance=1, length scale=10) to generate a Stationary Random Field (SRF). This ensures the synthetic data mimics the spatial continuity and "smoothness" often found in real-world environmental phenomena.
--   **Structure**: If there is a grid, points are generated on a regular Cartesian grid using a meshgrid of and coordinates. If it's not the case, points are sampled using a\*Uniform Random Distribution across the spatial domain to simulate irregular sampling.
--   **Size**: Ranging from 10,000 points for "Small" Datasets to 1,000,000 points for "Large" datasets
--   **Consistency**: A fixed seed (20170519) is applied to both the random field generation and the coordinate sampling to ensure the experiments are fully reproducible across different benchmark runs.
-
-For the **real datasets**, we utilize high-quality topographic data provided by the **IGN (Institut National de l'Information Géographique et Forestière)**, the French national mapping agency.
-
--   **BD ALTI**: This dataset represents the "unstructured" real-world scenario. The points are derived from various sources (photogrammetry, digitization, etc.) where the spatial distribution of samples is irregular. So we can use this dataset as our no grid, large, real dataset.
--   **RGE ALTI**: It is the highest resolution elevation model available nationally. It is provided as a 5-meter regular grid. The full national dataset contains over 22 billion points. So we can use this dataset as our grid, large, real dataset.
-
-For the Small real-world datasets, we use a subset of the French territory by filtering for Department 48 (Lozère). This department was chosen because its diverse topography—ranging from deep canyons and plateaus to mountainous terrain—offers a representative sample of various geographic challenges for spatial interpolation.
-
-## Dataset Reference Table
-
-| Dataset Name | Origin | Size Category | Structure | Approx. Row Count | Description |
-|------------|------------|------------|------------|------------|------------|
-| **bdalti** | Real | Large | No Grid | \~7,000,000 | BDALTI dataset. |
-| **bdalti_48** | Real | Small | No Grid | \~40,000 | Department 48 (Lozère) subset of BDALTI. |
-| **rgealti** | Real | Large | Grid | \~22,000,000,000 | RGEALTI. |
-| **rgealti_48** | Real | Small | Grid | \~1,500,000 | Department 48 subset of RGEALTI. |
-| **S-G-Sm** | Synthetic | Small | Grid | 10,000 | Structured Grid. |
-| **S-G-Lg** | Synthetic | Large | Grid | 1,000,000 | Structured Grid. |
-| **S-NG-Sm** | Synthetic | Small | No Grid | 10,000 | 10k points, Uniform Random Distribution. |
-| **S-NG-Lg** | Synthetic | Large | No Grid | 1,000,000 | 1M points, Uniform Random Distribution. |
-
 # Methodology
 
 ## General Framework
@@ -254,24 +219,45 @@ This condition defines a linear decision boundary in the original space with slo
 
 During the implementation, the choice has been made to pur the number of rotation up to 23, this choice has been made \[ASK OLIVIER\]. This implies that there is 23 couples of coordinates (x,y) the true one and 22 rotated. The rotation is made by the paper itself; and the angle of rotation for the i-th couple, i € {1, ..., 23}, is given by the formula 360 \* (i / 23), The 23-th is the real one.
 
-## Experimental Setup and Evaluation Metrics
+# Experimental Setup and Evaluation Metrics
 
-Our benchmark evaluation follows a standardized protocol to ensure fair comparison across all algorithms and datasets. The experimental configuration is summarized in Table X below. For some of the functions that we used, to implement them we built wrappers code, something that could have increase the running time of our algorithms.
+## Datasets
 
-**Table X: Benchmark Configuration**
+There will be 8 datasets to cover combinations of:
 
-| Component | Specification | Description |
-|---------------------|---------------------------|-------------------------|
-| **Train/Test Split** | 80% / 20% | Training set for model fitting, test set for performance evaluation |
-| **Random Seed** | 42 | Fixed seed for reproducible train/test splitting and model initialization |
-| **Test Size** | Variable by dataset | Small datasets: 5,000 points; Large datasets: 100,000 points |
-| **Coordinate Rotation** | 23 angles | Preprocessing for tree-based models (when applicable) |
-| **Target Transformation** | Log transform | Applied to real elevation datasets (BDALTI, RGEALTI) to handle skewness |
-| **Hardware** | SSPCloud environment | Multi-core CPU, optimized for parallel computation |
-| **Software** | Python 3.13 | scikit-learn, XGBoost, PyKrige, pyGAM, GeoRF, Polars, scikit-learn-intelex |
-| **Parallelization** | n_jobs=-1 | When it's possible, all available cores utilized where supported |
+-   **Real or Synthetic**
+-   **Large or Small**
+-   **Grid or No Grid**
 
-**Performance Metrics:**
+For the **synthetic ones**, they are built following the idea that we need some data spatially correlated, be able to respect our different criteria:
+
+-   **Spatial Correlation**: We use a **Matérn covariance model** (dimension=2, variance=1, length scale=10) to generate a Stationary Random Field (SRF). This ensures the synthetic data mimics the spatial continuity and "smoothness" often found in real-world environmental phenomena.
+-   **Structure**: If there is a grid, points are generated on a regular Cartesian grid using a meshgrid of and coordinates. If it's not the case, points are sampled using a\*Uniform Random Distribution across the spatial domain to simulate irregular sampling.
+-   **Size**: Ranging from 10,000 points for "Small" Datasets to 1,000,000 points for "Large" datasets
+-   **Consistency**: A fixed seed (20170519) is applied to both the random field generation and the coordinate sampling to ensure the experiments are fully reproducible across different benchmark runs.
+
+For the **real datasets**, we utilize high-quality topographic data provided by the **IGN (Institut National de l'Information Géographique et Forestière)**, the French national mapping agency.
+
+-   **BD ALTI**: This dataset represents the "unstructured" real-world scenario. The points are derived from various sources (photogrammetry, digitization, etc.) where the spatial distribution of samples is irregular. So we can use this dataset as our no grid, large, real dataset.
+-   **RGE ALTI**: It is the highest resolution elevation model available nationally. It is provided as a 5-meter regular grid. The full national dataset contains over 22 billion points. So we can use this dataset as our grid, large, real dataset.
+
+For the Small real-world datasets, we use a subset of the French territory by filtering for Department 48 (Lozère). This department was chosen because its diverse topography—ranging from deep canyons and plateaus to mountainous terrain—offers a representative sample of various geographic challenges for spatial interpolation.
+
+## Dataset Reference Table
+
+| Dataset Name | Origin | Size Category | Structure | Approx. Row Count | Description |
+|------------|------------|------------|------------|------------|------------|
+| **bdalti** | Real | Large | No Grid | \~7,000,000 | BDALTI dataset. |
+| **bdalti_48** | Real | Small | No Grid | \~40,000 | Department 48 (Lozère) subset of BDALTI. |
+| **rgealti** | Real | Large | Grid | \~22,000,000,000 | RGEALTI. |
+| **rgealti_48** | Real | Small | Grid | \~1,500,000 | Department 48 subset of RGEALTI. |
+| **S-G-Sm** | Synthetic | Small | Grid | 10,000 | Structured Grid. |
+| **S-G-Lg** | Synthetic | Large | Grid | 1,000,000 | Structured Grid. |
+| **S-NG-Sm** | Synthetic | Small | No Grid | 10,000 | 10k points, Uniform Random Distribution. |
+| **S-NG-Lg** | Synthetic | Large | No Grid | 1,000,000 | 1M points, Uniform Random Distribution. |
+
+
+## Performance Metrics
 
 We evaluate all models using three complementary metrics computed on the held-out test set:
 
@@ -283,7 +269,16 @@ We evaluate all models using three complementary metrics computed on the held-ou
 
 -   **Training Time**: Wall-clock time (in seconds) required for model fitting on the training set. Provides insight into computational efficiency and practical scalability.
 
-All metrics are computed on the test set to assess generalization performance on unseen data. For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
+
+
+## Benchmark Procedure  
+
+All experiments were conducted in a **Python 3.13** environment (utilizing scikit-learn, XGBoost, PyKrige, and others) hosted on **SSPCloud** infrastructure, with full parallelization enabled (`n_jobs=-1`). To ensure reproducibility, a fixed **random seed of 42** was applied to an **80/20 train-test split**, resulting in test sets of 5,000 points for small datasets and 100,000 points for large datasets. Preprocessing strategies included **log-transforming** skewed elevation targets and applying a **23-angle coordinate rotation** for tree-based models.
+
+Our benchmark evaluation follows a standardized protocol to ensure fair comparison across all algorithms and datasets. This procedure is a double loop on both datasets and algorithms. All metrics are computed on the test set to assess generalization performance on unseen data. For some of the functions that we used, to implement them we built wrappers code, something that could have increase the running time of our algorithms.
+
+For models requiring hyperparameters we use configurations established through preliminary tuning or standard recommendations from the literature. The focus of this benchmark is on comparing algorithm families rather than exhaustive hyperparameter optimization for individual models.
+
 
 # Results
 
@@ -435,16 +430,19 @@ Here we can see that determnistic algorithm are the faster, on the opposite GeoR
 
 ```{python}
 #| echo: false
+import pandas as pd
+import numpy as np
 
-def create_fig_speed_vs_scalability():
-    """Figure: Base Speed vs Scalability Ratio"""
+def create_table_speed_vs_scalability():
+    """Generates a table for Base Speed vs Scalability Ratio"""
     
     small_ds = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
     large_ds = ['rgealti', 'bdalti', 'S-G-Lg', 'S-NG-Lg']
     
-    plot_data = []
+    table_data = []
     
     for m_key in model_names.keys():
+        # Extract times exactly as the graph did
         times_sm = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in small_ds]
         times_lg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in large_ds]
         
@@ -453,59 +451,32 @@ def create_fig_speed_vs_scalability():
             avg_lg = np.mean(times_lg)
             ratio = avg_lg / avg_sm if avg_sm > 0 else 0
             
-            plot_data.append({
+            # Determine Group based on color mapping (Reverse engineering the logic)
+            group = "Unknown"
+            m_color = get_model_color(m_key)
+            if m_color == color_deterministic: group = "Deterministic"
+            elif m_color == color_geostat: group = "Geostatistical"
+            elif m_color == color_tree: group = "Tree-based"
+            elif m_color == color_advanced_tree: group = "Adv. Tree"
+            elif m_color == color_gam: group = "GAM"
+
+            table_data.append({
                 'Model': model_names[m_key],
-                'Time_Small': avg_sm,
-                'Time_Large': avg_lg,
-                'Ratio': ratio,
-                'Color': get_model_color(m_key)
+                'Group': group,
+                'Base Speed (s)': round(avg_sm, 4),
+                'Scaled Speed (s)': round(avg_lg, 4),
+                'Scalability Ratio': round(ratio, 2)
             })
     
-    df = pd.DataFrame(plot_data)
+    # Create DataFrame and sort by Scalability Ratio (or Speed)
+    df = pd.DataFrame(table_data)
+    df = df.sort_values(by='Scalability Ratio', ascending=True)
     
-    fig, ax = plt.subplots(figsize=(12, 8))
-    
-    # On trace les points. La taille des points peut représenter le temps absolu sur Large
-    scatter = ax.scatter(df['Time_Small'], df['Ratio'], 
-                         c=df['Color'], s=df['Time_Large']*10 if df['Time_Large'].max() < 100 else 200, 
-                         edgecolors='black', alpha=0.8, zorder=3)
-    
-    # Ajout des noms des modèles à côté des points
-    for i, txt in enumerate(df['Model']):
-        ax.annotate(txt, (df['Time_Small'][i], df['Ratio'][i]), 
-                    xytext=(8, 8), textcoords='offset points', 
-                    fontsize=9, fontweight='bold', color=df['Color'][i])
-    
-    # Configuration des axes en Log
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-    
-    ax.set_xlabel('Base Speed: Avg Training Time Small (s) - Log Scale', fontsize=11)
-    ax.set_ylabel('Scalability Gap: Ratio (Large/Small) - Log Scale', fontsize=11)
-    ax.set_title('Efficiency Landscape: Initial Speed vs. Scalability Cost', fontsize=14, fontweight='bold', pad=20)
-    
-    # Zones d'interprétation
-    ax.axhline(10, color='gray', linestyle='--', alpha=0.3) # Repère : 10x plus lent
-    ax.text(ax.get_xlim()[0]*1.1, 11, 'High Complexity (>10x)', color='red', alpha=0.6, fontsize=9)
-    ax.text(ax.get_xlim()[0]*1.1, 1.2, 'Linear Scaling', color='green', alpha=0.6, fontsize=9)
+    return df
 
-    ax.grid(True, which="both", ls="-", alpha=0.15)
-    
-    # Légende manuelle pour les groupes
-    from matplotlib.lines import Line2D
-    legend_elements = [
-        Line2D([0], [0], marker='o', color='w', label='Deterministic', markerfacecolor=color_deterministic, markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Geostatistical', markerfacecolor=color_geostat, markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Tree-based', markerfacecolor=color_tree, markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Adv. Tree', markerfacecolor=color_advanced_tree, markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='GAM', markerfacecolor=color_gam, markersize=10)
-    ]
-    ax.legend(handles=legend_elements, title="Algorithm Groups", loc='upper left')
-
-    plt.tight_layout()
-    plt.show()
-
-create_fig_speed_vs_scalability()
+# Run the function to see the table
+df_speed_scalability = create_table_speed_vs_scalability()
+display(df_speed_scalability)
 ```
 
 ### Scalability
@@ -594,76 +565,151 @@ create_fig_r2_scalability_dumbbell()
 
 We observe that while deterministic models hit a performance ceiling fairly quickly, ensemble methods continue to refine their decision boundaries as more points are provided. This suggests that the higher computational cost of training a Random Forest or XGBoost on large data is justified by a superior ability to extract spatial details that sparse data cannot reveal.
 
-### Grid or real what is relevant ?
+### Grid or no grid / Real or synthetic : same algorithms ?
 
 Beyond dataset size, the geometric arrangement of points plays a critical role in model performance.
 
 ```{python}
 #| echo: false
+import pandas as pd
 
-def create_fig_side_by_side_delta():
-    """Figure: Comparaison Grid vs No-Grid (Real vs Synthetic) classée par performance"""
+def display_rank_table():
+    """Table: Comparison of Model Ranks (Lower is better)"""
     
-    # 1. Calcul des Deltas
-    categories = {
-        'Real Datasets (Small)': ('rgealti_48', 'bdalti_48'),
-        'Synthetic Datasets (Small)': ('S-G-Sm', 'S-NG-Sm')
+    # Define the datasets
+    datasets = {
+        'Real_Grid': 'rgealti_48',
+        'Real_NoGrid': 'bdalti_48',
+        'Synth_Grid': 'S-G-Sm',
+        'Synth_NoGrid': 'S-NG-Sm'
     }
     
-    fig, axes = plt.subplots(1, 2, figsize=(18, 8), sharey=False)
+    data = []
+    for m_key, m_name in model_names.items():
+        row = {'Model': m_name}
+        for label, ds_name in datasets.items():
+            # Find result for specific model + dataset
+            res = next((r for r in results if r['model'] == m_key and r['dataset'] == ds_name), None)
+            # Store R2 score, use -999 if missing so it ranks last
+            row[label] = res['r2_score'] if res else -999 
+        data.append(row)
     
-    for ax, (title, (grid_ds, nogrid_ds)) in zip(axes, categories.items()):
-        delta_list = []
+    df = pd.DataFrame(data)
+    
+    # Calculate Ranks 
+    # (ascending=False because higher R2 is better, so Rank 1 = High R2)
+    for label in datasets.keys():
+        df[f'Rank_{label}'] = df[label].rank(ascending=False).astype(int)
         
-        for m_key in model_names.keys():
-            grid_res = [r for r in results if r['model'] == m_key and r['dataset'] == grid_ds]
-            nogrid_res = [r for r in results if r['model'] == m_key and r['dataset'] == nogrid_ds]
-            
-            if grid_res and nogrid_res:
-                delta = grid_res[0]['r2_score'] - nogrid_res[0]['r2_score']
-                delta_list.append({
-                    'ModelName': model_names[m_key],
-                    'Delta': delta,
-                    'Color': get_model_color(m_key)
-                })
-        
-        # Création du DataFrame et Tri décroissant
-        df_temp = pd.DataFrame(delta_list).sort_values(by='Delta', ascending=False)
-        
-        # Plot
-        bars = ax.bar(df_temp['ModelName'], df_temp['Delta'], color=df_temp['Color'], edgecolor='black', linewidth=0.8)
-        
-        # Esthétique
-        ax.axhline(0, color='black', linewidth=2)
-        ax.grid(False) # Suppression de la grille
-        ax.set_title(title, fontsize=14, fontweight='bold', pad=15)
-        ax.set_ylabel('$\Delta R^2$ (Grid - No Grid)')
-        
-        # Rotation des labels X
-        ax.set_xticks(range(len(df_temp)))
-        ax.set_xticklabels(df_temp['ModelName'], rotation=45, ha='right')
-        
-        # Coloration des labels de l'axe X pour correspondre aux barres
-        for tick, color in zip(ax.get_xticklabels(), df_temp['Color']):
-            tick.set_color(color)
-            tick.set_weight('bold')
-
-    # Ajout d'une légende commune pour les groupes de modèles
-    from matplotlib.lines import Line2D
-    legend_elements = [
-        Line2D([0], [0], color=color_deterministic, lw=6, label='Deterministic'),
-        Line2D([0], [0], color=color_geostat, lw=6, label='Geostatistical'),
-        Line2D([0], [0], color=color_tree, lw=6, label='Tree-based'),
-        Line2D([0], [0], color=color_advanced_tree, lw=6, label='Advanced Tree'),
-        Line2D([0], [0], color=color_gam, lw=6, label='GAM')
+    # Select only the rank columns for the final view
+    display_cols = [
+        'Model', 
+        'Rank_Real_Grid', 'Rank_Real_NoGrid', 
+        'Rank_Synth_Grid', 'Rank_Synth_NoGrid'
     ]
-    fig.legend(handles=legend_elements, loc='lower center', ncol=5, bbox_to_anchor=(0.5, -0.05), frameon=True)
+    
+    # Sort by performance on Real Grid as a baseline
+    df_final = df[display_cols].sort_values(by='Rank_Real_Grid')
+    
+    return df_final
 
-    plt.suptitle('Impact of Grid Structure on Model Performance ($R^2$)', fontsize=16, y=1.02)
+# Display the table (Jupyter will render this as a nice HTML table)
+rank_table = display_rank_table()
+rank_table
+```
+
+So we can say that having a grid or not does not makes an algorithm over perform the other, but we might see that be real or synthtic changes a lot ! 
+
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import pandas as pd
+import numpy as np
+
+def create_fig_avg_real_vs_synth():
+    """Figure: Average R2 Comparison (Real vs Synthetic)"""
+    
+    # Define the groups to average
+    real_datasets = ['rgealti_48', 'bdalti_48']
+    synth_datasets = ['S-G-Sm', 'S-NG-Sm']
+    
+    data_list = []
+    
+    for m_key in model_names.keys():
+        # Get scores for Real
+        r_scores = [r['r2_score'] for r in results if r['model'] == m_key and r['dataset'] in real_datasets]
+        # Get scores for Synth
+        s_scores = [r['r2_score'] for r in results if r['model'] == m_key and r['dataset'] in synth_datasets]
+        
+        # Only proceed if we have all data points to ensure fair comparison
+        if len(r_scores) == 2 and len(s_scores) == 2:
+            data_list.append({
+                'ModelName': model_names[m_key],
+                'Avg_Real': sum(r_scores) / 2,
+                'Avg_Synth': sum(s_scores) / 2,
+                'Color': get_model_color(m_key)
+            })
+            
+    # Create DataFrame and Sort by Real Data Performance
+    df = pd.DataFrame(data_list).sort_values(by='Avg_Real', ascending=False)
+    
+    # --- Plotting ---
+    fig, ax = plt.subplots(figsize=(14, 7))
+    
+    x = np.arange(len(df))
+    width = 0.35  # Width of the bars
+    
+    # Create grouped bars
+    # We use hatch patterns or slight transparency to distinguish Real vs Synth
+    rects1 = ax.bar(x - width/2, df['Avg_Real'], width, label='Real Data (Avg)', 
+                    color=df['Color'], edgecolor='black', alpha=1.0)
+    
+    rects2 = ax.bar(x + width/2, df['Avg_Synth'], width, label='Synthetic Data (Avg)', 
+                    color=df['Color'], edgecolor='black', alpha=0.4, hatch='///')
+
+    # Customizing the plot
+    ax.set_ylabel('Average $R^2$ Score')
+    ax.set_title('Model Performance Comparison: Real vs. Synthetic (Averaged over Grid/No-Grid)', fontsize=14, pad=15)
+    
+    # X-axis formatting
+    ax.set_xticks(x)
+    ax.set_xticklabels(df['ModelName'], rotation=45, ha='right')
+    
+    # Color the x-labels
+    for tick, color in zip(ax.get_xticklabels(), df['Color']):
+        tick.set_color(color)
+        tick.set_weight('bold')
+
+    # Manual Legend construction to explain the Bar Styles
+    from matplotlib.patches import Patch
+    from matplotlib.lines import Line2D
+    
+    # Legend for Bar Styles (Real vs Synth)
+    style_legend = [
+        Patch(facecolor='gray', edgecolor='black', label='Real Data (Solid)'),
+        Patch(facecolor='gray', alpha=0.4, hatch='///', edgecolor='black', label='Synthetic Data (Hatched)')
+    ]
+    
+    # Legend for Colors (Model Families) - Reusing your existing logic
+    color_legend = [
+        Line2D([0], [0], color=color_deterministic, lw=4, label='Deterministic'),
+        Line2D([0], [0], color=color_geostat, lw=4, label='Geostatistical'),
+        Line2D([0], [0], color=color_tree, lw=4, label='Tree-based'),
+        Line2D([0], [0], color=color_advanced_tree, lw=4, label='Advanced Tree'),
+        Line2D([0], [0], color=color_gam, lw=4, label='GAM')
+    ]
+    
+    # Add legends
+    first_legend = ax.legend(handles=style_legend, loc='upper right', title="Dataset Type")
+    ax.add_artist(first_legend) # Add back the first legend manually
+    ax.legend(handles=color_legend, loc='lower left', title="Model Family", ncol=1, fontsize='small')
+    
+    ax.grid(axis='y', linestyle='--', alpha=0.5)
     plt.tight_layout()
     plt.show()
 
-create_fig_side_by_side_delta()
+create_fig_avg_real_vs_synth()
 ```
 
 The comparison between structured grids and unstructured "no-grid" samples reveals a specific bias in tree-based algorithms toward axis-aligned structures. Similarly, the transition from synthetic stationary fields to complex real-world topography (RGE and BD ALTI) tests the robustness of the spatial correlation assumptions. Our findings indicate that while geostatistical methods are highly sensitive to the regularity of the grid for covariance estimation, ensemble methods are more resilient to irregular sampling, provided they are sufficiently tuned.
