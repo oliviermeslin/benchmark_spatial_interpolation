@@ -459,7 +459,7 @@ def plot_small_datasets_landscape():
         Line2D([0], [0], marker='o', color='w', markerfacecolor=color_geostat, markersize=10, label='Geostatistical'),
         Line2D([0], [0], marker='o', color='w', markerfacecolor=color_gam, markersize=10, label='GAM'),
     ]
-    ax.legend(handles=legend_elements_color, title="Algorithm Family", loc='upper right')
+    ax.legend(handles=legend_elements_color, title="Algorithm Family", loc='upper left')
     
     plt.tight_layout()
     plt.show()
@@ -574,8 +574,8 @@ def create_fig_cr_impact_large():
             
             if std_res and cr_res:
                 # Use .get() to avoid KeyError if the metric is missing
-                std_r2 = std_res.get('r2_score')
-                cr_r2 = cr_res.get('r2_score')
+                std_r2 = std_res.get('rmse')
+                cr_r2 = cr_res.get('rmse')
                 
                 # Only plot if both scores exist and are valid numbers
                 if std_r2 is not None and cr_r2 is not None:
