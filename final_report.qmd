@@ -22,6 +22,10 @@ format:
     include-in-header:
       text: |
         \let\maketitle\relax 
+    header-includes:
+    - \usepackage{algorithm}
+    - \usepackage{algpseudocode}
+    - \usepackage{amsmath}
 
 execute:
   enabled: true
@@ -158,27 +162,48 @@ Generalized Additive Models represent a distinct class within the ML family. GAM
 
 ##### Adapting Tree-based Methods to Geospatial Data
 
-Despite their strong performance in many domains, **tree-based methods are not specifically designed for geospatial data**. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including **spatial autocorrelation**, **anisotropy**, and the presence of large-scale spatial trends.
+Despite their strong performance in many domains, **tree-based methods are not specifically designed for geospatial data**. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including **spatial autocorrelation**, **anisotropy**, and the presence of large-scale spatial trends. As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires **adaptation**. Broadly speaking, there are two alternative strategies to address these challenges.
 
-For example, environmental variables such as air pollution or temperature often exhibit strong spatial autocorrelation, meaning that nearby observations are highly dependent. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display **anisotropy**, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients.
+<!-- For example, environmental variables such as air pollution or temperature often exhibit strong spatial autocorrelation, meaning that nearby observations are highly dependent. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display **anisotropy**, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients. -->
 
-As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires **adaptation**. Broadly speaking, there are two complementary strategies to address these challenges.
-
-The first strategy consists in **modifying the learning algorithms themselves** to make them more suitable for spatial data. Examples include **Geospatial Random Forest (GeoRF)**, which explicitly incorporates spatial information into the ensemble construction, and **Oblique Random Forest**, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
+The first strategy consists in **modifying the algorithms themselves** to make them more suitable for spatial data. Examples include **Geospatial Random Forest (GeoRF)**, which explicitly incorporates spatial information into the ensemble construction, and **Oblique Random Forest**, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
 
 The second strategy focuses on **preprocessing the spatial data** in a way that makes it better suited to standard tree-based algorithms, without altering their internal structure. A prominent example of this approach is **coordinate rotation**, which augments the feature space with rotated versions of the original spatial coordinates. This transformation allows axis-aligned trees to effectively learn oblique spatial patterns, mitigating the geometric limitations of standard decision trees while preserving their computational efficiency and scalability.
 
-In this benchmark, we investigate both adaptation strategies, with particular emphasis on coordinate rotation as a simple yet powerful preprocessing technique. This approach enables standard tree-based ensembles to better align their decision boundaries with underlying spatial structures, offering a practical compromise between methodological simplicity and predictive performance.
+In this benchmark, we investigate both adaptation strategies, with particular emphasis on coordinate rotation as a simple yet powerful preprocessing technique.
 
-## Coordinate Rotation
+##### Addressing Anisotropy: Oblique Trees versus Coordinate Rotation
 
-In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
-
-The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
+Regarding spatial interpolation, all standard tree-based ensemble methods share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This implies that when dealing with spatial data, tree-based models produce geographical splits with either a North-South (vertical) orientation or a (horizontal) East-West orientation. Obviously, spatial phenomena may have any spatial orientation, implying that off-the-shelf tree-based models must approximate diagonal spatial patterns by an accumulation of horizontal or vertical splits, leading to a staircase approximation.
 
 To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
-The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different representations of the same space locations, unique for their rotation angle.
+The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different representations of the same space locations, unique for their rotation angle. The precise procedure is detailed in the following pseudocode.
+
+\begin{algorithm}
+\caption{Spatial Feature Augmentation by Coordinate Rotation}
+\begin{algorithmic}[1]
+\Require Training dataset $\{(x_i, y_i)\}_{i=1}^n$, number of axes $k$
+\Ensure Augmented feature matrix with original and rotated coordinates
+
+\State Compute centroid:
+\Statex \quad $\bar{x} \gets \frac{1}{n} \sum_{i=1}^n x_i$ \quad $\bar{y} \gets \frac{1}{n} \sum_{i=1}^n y_i$
+
+\State Generate rotation angles and apply rotation:
+\For{$j = 0$ to $k-1$}
+    \State $\theta_j \gets \frac{360^\circ \cdot j}{k}$
+    \For{$i = 1$ to $n$}
+        \State $x'_{ij} \gets \bar{x} + (x_i - \bar{x}) \cos(\theta_j) - (y_i - \bar{y}) \sin(\theta_j)$
+        \State $y'_{ij} \gets \bar{y} + (x_i - \bar{x}) \sin(\theta_j) + (y_i - \bar{y}) \cos(\theta_j)$
+    \EndFor
+\EndFor
+
+\State Return augmented features: $\{(x'_{i0}, y'_{i0}, x'_{i1}, y'_{i1}, \ldots, x'_{i,k-1}, y'_{i,k-1})\}_{i=1}^n$
+
+\end{algorithmic}
+\end{algorithm}
+
+
 
 ### Algorithmic Procedure
 **Step 1: Compute the Spatial Centroid**
