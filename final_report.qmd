@@ -94,11 +94,11 @@ Overview of the benchmarking framework and experimental pipeline.
 
 ### Algorithm Families: Theoretical Foundations
 
-Our benchmark compares ten spatial interpolation algorithms that can be grouped into three distinct families based on their theoretical foundations: deterministic methods, geostatistical methods, and machine learning approaches. Understanding these distinctions is essential for interpreting our results and providing practical guidance for model selection.
+Our benchmark compares a large range of spatial interpolation algorithms that can be grouped into three distinct families based on their theoretical foundations: deterministic methods, geostatistical methods, and machine learning approaches. Understanding these distinctions is essential for interpreting our results and providing practical guidance for model selection.
 
 #### Deterministic Methods
 
-**Inverse Distance Weighting** (IDW) and **K-Nearest Neighbors** (K-NN) belong to the ***deterministic family*** of spatial interpolation methods. Given identical input data, they always produce the same output, as their formulation contains no stochastic component. Unlike probabilistic approaches, they do not provide predictive uncertainty measures such as confidence intervals or variance estimates. Instead, predictions are obtained through fixed mathematical rules that operate directly on spatial distances, rather than through an explicit data-driven learning mechanism.
+**Inverse Distance Weighting** (IDW) and **K-Nearest Neighbors** (K-NN) belong to the ***deterministic family*** of spatial interpolation methods. Given identical input data, they always produce the same output, as their formulation contains no stochastic component. Predictions are obtained through fixed mathematical rules that operate directly on spatial distances, rather than through an explicit data-driven learning mechanism.
 
 However, it is important to remember that in this context *deterministic* does **not** mean *assumption-free*. In practice, both IDW and KNN embed **implicit assumptions** about the underlying spatial process through the choice of **hyperparameters**, which determine the effective spatial scale of smoothing and the degree of locality in the interpolation.
 
@@ -142,8 +142,6 @@ The machine learning (ML) approaches considered in this benchmark represent a fu
 
 Within the ML family, we distinguish **two main classes of methods**: **tree-based ensemble methods** and **Generalized Additive Models (GAM)**. This distinction is important, as it reflects different modeling philosophies and leads to markedly different behaviors when applied to spatial data.
 
-------------------------------------------------------------------------
-
 ##### Tree-based Ensemble Methods
 
 Tree-based ensemble methods are among the most widely used machine learning algorithms for tabular data and are known for their **state-of-the-art predictive performance**, **robustness, and scalability**. In this benchmark, we focus on two major subfamilies: **Random Forest (RF)** and **Gradient Boosting (GB)** methods.
@@ -154,13 +152,9 @@ Gradient Boosting methods, such as **XGBoost** and **MixGBoost**, adopt a differ
 
 A key advantage of tree-based methods lies in their broad **applicability across a wide range of prediction tasks**, as they can be employed **without relying on strong assumptions** about the underlying data-generating process. Moreover, they are highly extensible, allowing additional covariates to be seamlessly incorporated into the model. For instance, in applications such as housing price prediction, spatial coordinates can be combined with socioeconomic or structural variables, a level of flexibility that is difficult to achieve with traditional geostatistical approaches.
 
-------------------------------------------------------------------------
-
 ##### Generalized Additive Models
 
 Generalized Additive Models represent a distinct class within the ML family. GAMs model the target variable as a **sum of smooth nonlinear functions of the input features**, balancing flexibility and interpretability. While not tree-based, GAMs can capture nonlinear spatial trends through smooth functions of the coordinates, positioning them at the boundary between classical statistical modeling and modern machine learning. Their additive structure makes them more interpretable than ensemble methods, but also limits their ability to represent highly complex spatial interactions.
-
-------------------------------------------------------------------------
 
 ##### Adapting Tree-based Methods to Geospatial Data
 
