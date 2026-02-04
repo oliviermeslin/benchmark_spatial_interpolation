@@ -1,6 +1,6 @@
 ---
 # Keep metadata here for HTML/Internal use
-title: "Benchmark Algorithm of Ensemblist Methods on Spatial Data"
+title: "Benchmark Algorithm of Ensemble Methods on Spatial Data"
 author:
   - "Bianco Andrea"
   - "Mancini Matteo"
@@ -22,6 +22,10 @@ format:
     include-in-header:
       text: |
         \let\maketitle\relax 
+    header-includes:
+    - \usepackage{algorithm}
+    - \usepackage{algpseudocode}
+    - \usepackage{amsmath}
 
 execute:
   enabled: true
@@ -66,7 +70,7 @@ Brief summary of the project, including: - the spatial interpolation problem, - 
 
 # Introduction
 
-Spatial interpolation is a fundamental technique within the environmental sciences, used extensively to estimate the values of continuous variables at unsampled locations based exclusively on spatial coordinates. For decades, deterministic and geostatistical methods have been regarded as the premier choice for these tasks due to their mathematical foundations in spatial continuity. However, the recent advancement of ensemble learning methods—such as Random Forest and various Gradient Boosting machines—has begun to shift this perspective. These modern algorithms offer the potential to model complex, non-linear spatial surfaces that traditional methods may struggle to capture accurately.
+Spatial interpolation is a fundamental technique within the environmental sciences, used extensively to estimate the values of continuous variables at unsampled locations based exclusively on spatial coordinates. For decades, deterministic and geostatistical methods have been regarded as the premier choice for these tasks due to their mathematical foundations in spatial continuity. However, the recent advancement of ensemble learning methods (such as Random Forest and Gradient Boosting) has begun to shift this perspective. These modern algorithms offer the potential to model complex, non-linear spatial surfaces that traditional methods may struggle to capture accurately.
 
 The central research question of this benchmark involves identifying which algorithm is most effective for predicting spatial values using coordinates as the only covariates. In defining the most effective algorithm, this study looks beyond mere accuracy. We define the optimal model through the lens of both predictive precision and scalability. Precision measures the ability of a model to minimize error across diverse spatial geometries, while scalability evaluates the computational efficiency of the algorithm as it transitions from sparse datasets to large-scale high-density data.
 
@@ -90,15 +94,13 @@ Overview of the benchmarking framework and experimental pipeline.
 | D\) Inverse Distance Weighting (IDW)  | I\) Random Forest                  |
 | E\) MixGBoost                         | J\) XGBoost                        |
 
-## Conceptual Comparison of Methods
+## Comparison of Spatial Interpolation Methods
 
-### Algorithm Families: Theoretical Foundations
+Our benchmark compares a large range of spatial interpolation algorithms that can be grouped into three distinct families based on their theoretical foundations: deterministic methods, geostatistical methods, and machine learning approaches. Understanding these distinctions is essential for interpreting our results and providing practical guidance for model selection.
 
-Our benchmark compares ten spatial interpolation algorithms that can be grouped into three distinct families based on their theoretical foundations: deterministic methods, geostatistical methods, and machine learning approaches. Understanding these distinctions is essential for interpreting our results and providing practical guidance for model selection.
+### Deterministic Methods
 
-#### Deterministic Methods
-
-**Inverse Distance Weighting** (IDW) and **K-Nearest Neighbors** (K-NN) belong to the ***deterministic family*** of spatial interpolation methods. Given identical input data, they always produce the same output, as their formulation contains no stochastic component. Unlike probabilistic approaches, they do not provide predictive uncertainty measures such as confidence intervals or variance estimates. Instead, predictions are obtained through fixed mathematical rules that operate directly on spatial distances, rather than through an explicit data-driven learning mechanism.
+**Inverse Distance Weighting** (IDW) and **K-Nearest Neighbors** (K-NN) belong to the ***deterministic family*** of spatial interpolation methods. Given identical input data, they always produce the same output, as their formulation contains no stochastic component. Predictions are obtained through fixed mathematical rules that operate directly on spatial distances, rather than through an explicit data-driven learning mechanism.
 
 However, it is important to remember that in this context *deterministic* does **not** mean *assumption-free*. In practice, both IDW and KNN embed **implicit assumptions** about the underlying spatial process through the choice of **hyperparameters**, which determine the effective spatial scale of smoothing and the degree of locality in the interpolation.
 
@@ -114,7 +116,7 @@ At the same time, this simplicity comes with limitations. These methods do not e
 
 For this reason, deterministic methods provide a useful baseline for spatial interpolation, against which more complex probabilistic and learning-based approaches can be meaningfully compared.
 
-#### Geostatistical Method
+### Geostatistical Methods
 
 Ordinary Kriging represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation,determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
 
@@ -136,15 +138,13 @@ Taken together, these limitations imply that although Kriging is theoretically o
 
 These limitations motivate the exploration of alternative approaches that relax such assumptions while retaining strong predictive performance.
 
-#### Machine Learning Methods
+### Machine Learning Methods
 
 The machine learning (ML) approaches considered in this benchmark represent a fundamentally different paradigm from both deterministic and geostatistical methods. Rather than relying on fixed mathematical rules or explicit stochastic models of spatial dependence, ML algorithms are **data-driven** and learn predictive relationships directly from the data by optimizing a loss function. This property makes them highly flexible, scalable, and particularly effective in high-dimensional settings.
 
 Within the ML family, we distinguish **two main classes of methods**: **tree-based ensemble methods** and **Generalized Additive Models (GAM)**. This distinction is important, as it reflects different modeling philosophies and leads to markedly different behaviors when applied to spatial data.
 
-------------------------------------------------------------------------
-
-##### Tree-based Ensemble Methods
+#### Tree-based Ensemble Methods
 
 Tree-based ensemble methods are among the most widely used machine learning algorithms for tabular data and are known for their **state-of-the-art predictive performance**, **robustness, and scalability**. In this benchmark, we focus on two major subfamilies: **Random Forest (RF)** and **Gradient Boosting (GB)** methods.
 
@@ -154,73 +154,58 @@ Gradient Boosting methods, such as **XGBoost** and **MixGBoost**, adopt a differ
 
 A key advantage of tree-based methods lies in their broad **applicability across a wide range of prediction tasks**, as they can be employed **without relying on strong assumptions** about the underlying data-generating process. Moreover, they are highly extensible, allowing additional covariates to be seamlessly incorporated into the model. For instance, in applications such as housing price prediction, spatial coordinates can be combined with socioeconomic or structural variables, a level of flexibility that is difficult to achieve with traditional geostatistical approaches.
 
-------------------------------------------------------------------------
-
-##### Generalized Additive Models
+#### Generalized Additive Models
 
 Generalized Additive Models represent a distinct class within the ML family. GAMs model the target variable as a **sum of smooth nonlinear functions of the input features**, balancing flexibility and interpretability. While not tree-based, GAMs can capture nonlinear spatial trends through smooth functions of the coordinates, positioning them at the boundary between classical statistical modeling and modern machine learning. Their additive structure makes them more interpretable than ensemble methods, but also limits their ability to represent highly complex spatial interactions.
 
-------------------------------------------------------------------------
+#### Adapting Tree-based Methods to Geospatial Data
 
-##### Adapting Tree-based Methods to Geospatial Data
+Despite their strong performance in many domains, **tree-based methods are not specifically designed for geospatial data**. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including **spatial autocorrelation**, **anisotropy**, and the presence of large-scale spatial trends. As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires **adaptation**. Broadly speaking, there are two alternative strategies to address these challenges.
 
-Despite their strong performance in many domains, **tree-based methods are not specifically designed for geospatial data**. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including **spatial autocorrelation**, **anisotropy**, and the presence of large-scale spatial trends.
+<!-- For example, environmental variables such as air pollution or temperature often exhibit strong spatial autocorrelation, meaning that nearby observations are highly dependent. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display **anisotropy**, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients. -->
 
-For example, environmental variables such as air pollution or temperature often exhibit strong spatial autocorrelation, meaning that nearby observations are highly dependent. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display **anisotropy**, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients.
-
-As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires **adaptation**. Broadly speaking, there are two complementary strategies to address these challenges.
-
-The first strategy consists in **modifying the learning algorithms themselves** to make them more suitable for spatial data. Examples include **Geospatial Random Forest (GeoRF)**, which explicitly incorporates spatial information into the ensemble construction, and **Oblique Random Forest**, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
+The first strategy consists in **modifying the algorithms themselves** to make them more suitable for spatial data. Examples include **Geospatial Random Forest (GeoRF)**, which explicitly incorporates spatial information into the ensemble construction, and **Oblique Random Forest**, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
 
 The second strategy focuses on **preprocessing the spatial data** in a way that makes it better suited to standard tree-based algorithms, without altering their internal structure. A prominent example of this approach is **coordinate rotation**, which augments the feature space with rotated versions of the original spatial coordinates. This transformation allows axis-aligned trees to effectively learn oblique spatial patterns, mitigating the geometric limitations of standard decision trees while preserving their computational efficiency and scalability.
 
-In this benchmark, we investigate both adaptation strategies, with particular emphasis on coordinate rotation as a simple yet powerful preprocessing technique. This approach enables standard tree-based ensembles to better align their decision boundaries with underlying spatial structures, offering a practical compromise between methodological simplicity and predictive performance.
+In this benchmark, we investigate both adaptation strategies, with particular emphasis on coordinate rotation as a simple yet powerful preprocessing technique.
 
-## Coordinate Rotation
+#### Addressing Anisotropy: Oblique Trees versus Coordinate Rotation
 
-In this section, we discuss coordinate rotation, focusing on its usage and implementation. First of all, we explain the reasons why coordinate rotation is applied when working with spatial data. To do so, we start by considering tree-based ensemble methods, including Random Forest, Gradient Boosting, and XGBoost, which are widely used in machine learning due to their flexibility, robustness, and strong predictive performance. However, these algorithms share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This axis-aligned splitting strategy becomes a limitation when dealing with spatial data. Such limitations arise from the intrinsic characteristics of natural and human-related spatial phenomena, such as Topographic Features, Geological Structures and Urban and Human Geography.
+Regarding spatial interpolation, all standard tree-based ensemble methods share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This implies that when dealing with spatial data, tree-based models produce geographical splits with either a North-South (vertical) orientation or a (horizontal) East-West orientation. Obviously, spatial phenomena may have any spatial orientation, implying that off-the-shelf tree-based models must approximate diagonal spatial patterns by an accumulation of horizontal or vertical splits, leading to a staircase approximation.
 
-The structure of tree-based models implies that diagonal or curved boundaries must be approximated using only horizontal or vertical splits, leading to a staircase approximation. To better capture such boundaries, a large number of partitions is required, resulting in deeper trees and an increased risk of overfitting.
+Two main strategies can be considered to solve (approximately) this anisotropy problem. The first one is represented by Oblique Decision Trees, an algorithm that directly learns oblique splits by constructing linear combinations of features at each node; however, this approach is computationally demanding. The second strategy is coordinate rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
-To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
+Coordinate rotation is a data augmentation procedure based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data, each transformation being uniquely defined by its rotation angle. From a geometric perspective, it can be interpreted as a change of reference system applied to the spatial domain: each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
-The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different representations of the same space locations, unique for their rotation angle.
 
-### Algorithmic Procedure
-**Step 1: Compute the Spatial Centroid**
+The precise procedure is detailed in the following pseudocode.
 
-For a training dataset with $n$ observations and coordinates $(x_i, y_i)$ for $i = 1, \ldots, n$, we first compute the centroid:
+\begin{algorithm}
+\caption{Spatial Feature Augmentation by Coordinate Rotation}
+\begin{algorithmic}[1]
+\Require Training dataset $\{(x_i, y_i)\}_{i=1}^n$, number of axes $k$
+\Ensure Augmented feature matrix with original and rotated coordinates
 
-$$
-\bar{x} = \frac{1}{n}\sum_{i=1}^{n} x_i, \quad \bar{y} = \frac{1}{n}\sum_{i=1}^{n} y_i
-$$
+\State Compute centroid:
+\Statex \quad $\bar{x} \gets \frac{1}{n} \sum_{i=1}^n x_i$ \quad $\bar{y} \gets \frac{1}{n} \sum_{i=1}^n y_i$
 
-**Step 2: Define Rotation Angles**
+\State Generate rotation angles and apply rotation:
+\For{$j = 0$ to $k-1$}
+    \State $\theta_j \gets \frac{360^\circ \cdot j}{k}$
+    \For{$i = 1$ to $n$}
+        \State $x'_{ij} \gets \bar{x} + (x_i - \bar{x}) \cos(\theta_j) - (y_i - \bar{y}) \sin(\theta_j)$
+        \State $y'_{ij} \gets \bar{y} + (x_i - \bar{x}) \sin(\theta_j) + (y_i - \bar{y}) \cos(\theta_j)$
+    \EndFor
+\EndFor
 
-We generate a set of uniformly distributed rotation angles. For $k$ total axes, we use $k-1$ rotation angles:
+\State Return augmented features: $\{(x'_{i0}, y'_{i0}, x'_{i1}, y'_{i1}, \ldots, x'_{i,k-1}, y'_{i,k-1})\}_{i=1}^n$
 
-$$
-\theta_j = \frac{360° \cdot j}{k}, \quad j = 1, 2, \ldots, k-1
-$$
+\end{algorithmic}
+\end{algorithm}
 
-**Step 3: Apply Rotation Transformations**
 
-For each angle $\theta_j$, we compute the rotated coordinates for all observations. The rotation transformation is applied to the centered coordinates:
-
-$$
-\begin{aligned}
-x'_{ij} &= \bar{x} + (x_i - \bar{x}) \cos(\theta_j) - (y_i - \bar{y}) \sin(\theta_j) \\
-y'_{ij} &= \bar{y} + (x_i - \bar{x}) \sin(\theta_j) + (y_i - \bar{y}) \cos(\theta_j)
-\end{aligned}
-$$
-
-This generates a set of rotated coordinate pairs $(x'_{ij}, y'_{ij})$ for each observation $i$ and rotation angle $j$.
-
-**Step 4: Construct Augmented Feature Matrix**
-
-The final feature matrix for each observation consists of: Original coordinates: $(x, y)$ , Rotated coordinates: $(x'_1, y'_1), (x'_2, y'_2), \ldots, (x'_{k-1}, y'_{k-1})$
-
-### Model Selection for Coordinate Rotation
+#### Model Selection for Coordinate Rotation
 
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
@@ -228,10 +213,6 @@ Not all algorithms benefit equally from coordinate rotation. For this reason, we
 - Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
 
 The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. 
-
-### Geometric Interpretation
-
-From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
 # Experimental Setup and Evaluation Metrics
 
