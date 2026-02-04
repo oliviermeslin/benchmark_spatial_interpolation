@@ -174,9 +174,12 @@ In this benchmark, we investigate both adaptation strategies, with particular em
 
 Regarding spatial interpolation, all standard tree-based ensemble methods share a fundamental limitation: they rely exclusively on axis-aligned splits during tree construction. At each node, the algorithm selects a single feature and a threshold value to partition the data along that coordinate axis. This implies that when dealing with spatial data, tree-based models produce geographical splits with either a North-South (vertical) orientation or a (horizontal) East-West orientation. Obviously, spatial phenomena may have any spatial orientation, implying that off-the-shelf tree-based models must approximate diagonal spatial patterns by an accumulation of horizontal or vertical splits, leading to a staircase approximation.
 
-To overcome these limitations, two main strategies can be considered. The first one is represented by Oblique Decision Trees, an algorithms that directly learn oblique splits by constructing linear combinations of features at each node; however, these methods are computationally demanding. The second strategy is our Coordinate Rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
+Two main strategies can be considered to solve (approximately) this anisotropy problem. The first one is represented by Oblique Decision Trees, an algorithm that directly learns oblique splits by constructing linear combinations of features at each node; however, this approach is computationally demanding. The second strategy is coordinate rotation, a simpler approach that augments the feature space with rotated versions of the original coordinates, allowing standard axis-aligned algorithms to effectively learn oblique boundaries.
 
-The Coordinate rotation method is based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data. Using this procedure we are able to obtain an icreased number of feature space containing multiple and different representations of the same space locations, unique for their rotation angle. The precise procedure is detailed in the following pseudocode.
+Coordinate rotation is a data augmentation procedure based on the transformation of the original spatial coordinates $(x, y)$ by applying a series of rotation transformation around the centroid of the training data, each transformation being uniquely defined by its rotation angle. From a geometric perspective, it can be interpreted as a change of reference system applied to the spatial domain: each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
+
+
+The precise procedure is detailed in the following pseudocode.
 
 \begin{algorithm}
 \caption{Spatial Feature Augmentation by Coordinate Rotation}
@@ -210,10 +213,6 @@ Not all algorithms benefit equally from coordinate rotation. For this reason, we
 - Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
 
 The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. 
-
-### Geometric Interpretation
-
-From a geometric perspective, coordinate rotation can be interpreted as a change of reference system applied to the spatial domain. Each rotation defines a new coordinate system whose axes are oriented at a specific angle with respect to the original one. Within these rotated systems, spatial patterns that appear oblique in the original coordinates may become aligned with the axes, allowing tree-based models to represent them through simple axis-aligned splits.
 
 # Experimental Setup and Evaluation Metrics
 
