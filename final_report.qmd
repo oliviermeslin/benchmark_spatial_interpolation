@@ -92,7 +92,7 @@ Overview of the benchmarking framework and experimental pipeline.
 | B\) GeoSpatial Random Forest          | G\) Oblique Random Forest          |
 | C\) Gradient Boosting                 | H\) Ordinary Kriging               |
 | D\) Inverse Distance Weighting (IDW)  | I\) Random Forest                  |
-| E\) MixGBoost                         | J\) XGBoost                        |
+| E\) MI-GBT                            | J\) XGBoost                        |
 
 # Comparison of Spatial Interpolation Methods
 
@@ -152,7 +152,7 @@ Tree-based ensemble methods are among the most widely used machine learning algo
 
 Random Forest is based on a **bagging strategy**, where multiple decision trees are trained on **bootstrap samples** of the data and their predictions are averaged. Each tree partitions the feature space through **recursive binary splits** designed to **minimize prediction error within each region**. The aggregation of many decorrelated trees results in stable predictions with reduced variance.
 
-Gradient Boosting methods, such as **XGBoost** and **MixGBoost**, adopt a different strategy. Trees are built **sequentially**, with each new tree trained to correct the residual errors of the existing ensemble. This iterative refinement **often** yields **higher predictive accuracy** than bagging-based methods, at the cost of increased **sensitivity to hyperparameter tuning** and a **higher risk of overfitting** if not properly regularized.
+Gradient Boosting methods, such as **XGBoost** and **MI-GBT**, adopt a different strategy. Trees are built **sequentially**, with each new tree trained to correct the residual errors of the existing ensemble. This iterative refinement **often** yields **higher predictive accuracy** than bagging-based methods, at the cost of increased **sensitivity to hyperparameter tuning** and a **higher risk of overfitting** if not properly regularized.
 
 A key advantage of tree-based methods lies in their broad **applicability across a wide range of prediction tasks**, as they can be employed **without relying on strong assumptions** about the underlying data-generating process. Moreover, they are highly extensible, allowing additional covariates to be seamlessly incorporated into the model. For instance, in applications such as housing price prediction, spatial coordinates can be combined with socioeconomic or structural variables, a level of flexibility that is difficult to achieve with traditional geostatistical approaches.
 
@@ -216,7 +216,7 @@ The Coordinate rotation method is based on the transformation of the original sp
 Not all algorithms benefit equally from coordinate rotation. For this reason, we apply the technique selectively based on each algorithmic properties:
 
 **Models with Coordinate Rotation Variants**: 
-- Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MixGBoost (MixGB vs MixGB-CR) - GAM (GAM vs GAM-CR)
+- Random Forest (RF vs RF-CR) - XGBoost (XGB vs XGB-CR) - MI-GBT (MI-GBT vs MI-GBT-CR) - GAM (GAM vs GAM-CR)
 
 The remaining algorithm are used only for a comparative purpose. This allow us to see how the coordinate rotations based models perform with respect to other existing strategy and isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms. 
 
@@ -469,7 +469,7 @@ The plot reveals a distinct separation in computational profiles.
 
 
 2. **Retained Models:**
-* **Ensembles (Orange):** RF, XGBoost, and MixGBoost offer the best balance (fast and accurate).
+* **Ensembles (Orange):** RF, XGBoost, and MI-GBT offer the best balance (fast and accurate).
 * **Deterministic (Blue):** Retained as baselines due to their near-instant speed.
 
 
