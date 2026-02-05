@@ -118,9 +118,11 @@ For this reason, deterministic methods provide a useful baseline for spatial int
 
 #### Geostatistical Method
 
-Ordinary Kriging represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation,determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
+*Kriging** represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation, determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
 
 At the core of the approach lies the variogram, which describes how similarity between observations changes with distance. Rather than simply assuming that nearby points are more influential, as deterministic methods do, Kriging asks how strong this influence is and how it evolves across spatial scales. Based on this information, optimal prediction weights are obtained by solving a system of linear equations that accounts for both inter-point distances and the overall spatial configuration.
+
+There are several types of Kriging methods based on different assumptions about the spatial trend: **Universal Kriging** (polynomial drift with unknown coefficients), **Simple Kriging** (known constant mean), and **Ordinary Kriging**. In this benchmark, we focus on Ordinary Kriging.
 
 Formally, the Ordinary Kriging predictor at an unobserved location $s_0$ is defined as a linear combination of the observed values, $\hat{Z}(s_0) = \sum_{i=1}^{n} \lambda_i \, Z(s_i)$, subject to the unbiasedness constraint $\sum_{i=1}^{n} \lambda_i = 1$. The weights $\lambda_i$ are chosen so as to minimize the prediction error variance $\operatorname{Var}\bigl(\hat{Z}(s_0) - Z(s_0)\bigr)$ under the assumed variogram model.
 
@@ -137,6 +139,7 @@ Beyond these computational and theoretical issues, Kriging also presents practic
 Taken together, these limitations imply that although Kriging is theoretically optimal under its assumptions, it is not always the most practical choice in real-world settings. The gap between theoretical optimality and empirical performance is therefore a central theme in the benchmark results presented in this study.
 
 These limitations motivate the exploration of alternative approaches that relax such assumptions while retaining strong predictive performance.
+
 
 #### Machine Learning Methods
 
