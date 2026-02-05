@@ -70,7 +70,7 @@ Brief summary of the project, including: - the spatial interpolation problem, - 
 
 # Introduction
 
-Spatial interpolation is a fundamental technique within the environmental sciences, used extensively to estimate the values of continuous variables at unsampled locations based exclusively on spatial coordinates. For decades, deterministic and geostatistical methods have been regarded as the premier choice for these tasks due to their mathematical foundations in spatial continuity. However, the recent advancement of ensemble learning methods—such as Random Forest and various Gradient Boosting machines—has begun to shift this perspective. These modern algorithms offer the potential to model complex, non-linear spatial surfaces that traditional methods may struggle to capture accurately.
+Spatial interpolation is a fundamental technique within the environmental sciences, used extensively to estimate the values of continuous variables at unsampled locations based exclusively on spatial coordinates. For decades, deterministic and geostatistical methods have been regarded as the premier choice for these tasks due to their mathematical foundations in spatial continuity. However, the recent advancement of ensemble learning methods (such as Random Forest and Gradient Boosting) has begun to shift this perspective. These modern algorithms offer the potential to model complex, non-linear spatial surfaces that traditional methods may struggle to capture accurately.
 
 The central research question of this benchmark involves identifying which algorithm is most effective for predicting spatial values using coordinates as the only covariates. In defining the most effective algorithm, this study looks beyond mere accuracy. We define the optimal model through the lens of both predictive precision and scalability. Precision measures the ability of a model to minimize error across diverse spatial geometries, while scalability evaluates the computational efficiency of the algorithm as it transitions from sparse datasets to large-scale high-density data.
 
@@ -118,9 +118,11 @@ For this reason, deterministic methods provide a useful baseline for spatial int
 
 #### Geostatistical Method
 
-Ordinary Kriging represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation,determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
+*Kriging** represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation, determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
 
 At the core of the approach lies the variogram, which describes how similarity between observations changes with distance. Rather than simply assuming that nearby points are more influential, as deterministic methods do, Kriging asks how strong this influence is and how it evolves across spatial scales. Based on this information, optimal prediction weights are obtained by solving a system of linear equations that accounts for both inter-point distances and the overall spatial configuration.
+
+There are several types of Kriging methods based on different assumptions about the spatial trend: **Universal Kriging** (polynomial drift with unknown coefficients), **Simple Kriging** (known constant mean), and **Ordinary Kriging**. In this benchmark, we focus on Ordinary Kriging.
 
 Formally, the Ordinary Kriging predictor at an unobserved location $s_0$ is defined as a linear combination of the observed values, $\hat{Z}(s_0) = \sum_{i=1}^{n} \lambda_i \, Z(s_i)$, subject to the unbiasedness constraint $\sum_{i=1}^{n} \lambda_i = 1$. The weights $\lambda_i$ are chosen so as to minimize the prediction error variance $\operatorname{Var}\bigl(\hat{Z}(s_0) - Z(s_0)\bigr)$ under the assumed variogram model.
 
@@ -138,13 +140,13 @@ Taken together, these limitations imply that although Kriging is theoretically o
 
 These limitations motivate the exploration of alternative approaches that relax such assumptions while retaining strong predictive performance.
 
+
 #### Machine Learning Methods
 
 The machine learning (ML) approaches considered in this benchmark represent a fundamentally different paradigm from both deterministic and geostatistical methods. Rather than relying on fixed mathematical rules or explicit stochastic models of spatial dependence, ML algorithms are **data-driven** and learn predictive relationships directly from the data by optimizing a loss function. This property makes them highly flexible, scalable, and particularly effective in high-dimensional settings.
 
 Within the ML family, we distinguish **two main classes of methods**: **tree-based ensemble methods** and **Generalized Additive Models (GAM)**. This distinction is important, as it reflects different modeling philosophies and leads to markedly different behaviors when applied to spatial data.
 
-------------------------------------------------------------------------
 
 ##### Tree-based Ensemble Methods
 
@@ -156,13 +158,12 @@ Gradient Boosting methods, such as **XGBoost** and **MI-GBT**, adopt a different
 
 A key advantage of tree-based methods lies in their broad **applicability across a wide range of prediction tasks**, as they can be employed **without relying on strong assumptions** about the underlying data-generating process. Moreover, they are highly extensible, allowing additional covariates to be seamlessly incorporated into the model. For instance, in applications such as housing price prediction, spatial coordinates can be combined with socioeconomic or structural variables, a level of flexibility that is difficult to achieve with traditional geostatistical approaches.
 
-------------------------------------------------------------------------
+
 
 #### Generalized Additive Models
 
 Generalized Additive Models represent a distinct class within the ML family. GAMs model the target variable as a **sum of smooth nonlinear functions of the input features**, balancing flexibility and interpretability. While not tree-based, GAMs can capture nonlinear spatial trends through smooth functions of the coordinates, positioning them at the boundary between classical statistical modeling and modern machine learning. Their additive structure makes them more interpretable than ensemble methods, but also limits their ability to represent highly complex spatial interactions.
 
-------------------------------------------------------------------------
 
 #### Adapting Tree-based Methods to Geospatial Data
 
