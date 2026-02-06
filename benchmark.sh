@@ -12,7 +12,7 @@ mkdir -p "$WORK_DIR/results"
 # 1. Run Benchmark SMALL
 # ---------------------------------------------------------
 echo "Step 1: Running Benchmark on SMALL datasets..."
-uv run python 2_Model_training/benchmark_small.py
+# uv run python 2_Model_training/benchmark_small.py
 
 # Upload small results immediately to S3
 if [ -f "$WORK_DIR/results/results_small.json" ]; then

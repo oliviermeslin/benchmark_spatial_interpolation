@@ -1,7 +1,7 @@
 """
-benchmark_large.py - CORRECTED
+benchmark_large.py - CORRECTED & UPDATED
 Target: Large Datasets (~100,000 points) & Noisy Datasets
-Fix: Removed invalid syntax and ensures all metrics (Time, R2, MAE) are saved.
+Updates: Uses the 3 new variable-noise synthetic datasets (N1, N2, N3).
 """
 import json
 import time
@@ -39,13 +39,22 @@ RANDOM_STATE = 42
 SIZE_LARGE = 100_000
 
 DATASETS = [
+    # --- Real World Datasets ---
     {"name": "rgealti", "path": "s3://projet-benchmark-spatial-interpolation/data/real/RGEALTI/RGEALTI_parquet/", "target_n": SIZE_LARGE, "transform": "log"},
     {"name": "bdalti", "path": "s3://projet-benchmark-spatial-interpolation/data/real/BDALTI/BDALTI_parquet/", "target_n": SIZE_LARGE, "transform": "log"},
     {"name": "cal_housing", "path": "s3://projet-benchmark-spatial-interpolation/data/real/HOUSING/california_housing.parquet", "target_n": 25000, "noisy": True},
+
+    # --- Clean Synthetic Datasets  ---
     {"name": "S-G-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet", "target_n": SIZE_LARGE},
     {"name": "S-NG-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet", "target_n": SIZE_LARGE},
-    {"name": "S-G-Lg-N", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg-N.parquet", "target_n": SIZE_LARGE, "noisy": True},
-    {"name": "S-NG-Lg-N", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg-N.parquet", "target_n": SIZE_LARGE, "noisy": True},
+
+    # --- New Synthetic Datasets (Large, No Grid, Increasing Noise) ---
+    # N1 = Std 0.5 (Low Noise)
+    {"name": "S-NG-Lg-N1", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg-N1.parquet", "target_n": SIZE_LARGE, "noisy": True},
+    # N2 = Std 1.0 (Medium Noise)
+    {"name": "S-NG-Lg-N2", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg-N2.parquet", "target_n": SIZE_LARGE, "noisy": True},
+    # N3 = Std 2.0 (High Noise)
+    {"name": "S-NG-Lg-N3", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg-N3.parquet", "target_n": SIZE_LARGE, "noisy": True},
 ]
 
 MODELS = [
@@ -72,6 +81,12 @@ MODELS = [
         "class": xgboost.XGBRegressor,
         "number_axis": 23,
         "param_space": {"n_estimators": [300, 500], "learning_rate": [0.05, 0.1], "max_depth": [6, 8], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
+    },
+    {
+        "name": "mixgboost",
+        "class": SklearnMIXGBooster,
+        "number_axis": 1,
+        "param_space": {"k": [20], "lamb": [0.05], "learning_rate": [0.1], "n_estimators": [300], "max_depth": [8], "n_jobs": [-1]}
     },
     {
         "name": "mixgboost_cr",
@@ -110,17 +125,25 @@ def load_dataset(dataset_config: dict):
     ldf = get_df_from_s3(dataset_config["path"])
     target_n = dataset_config.get("target_n", 100_000)
     
-    if "val" in ldf.collect_schema().names(): ldf = ldf.rename({"val": "value"})
-    if "rgealti" in dataset_config["name"]: ldf = ldf.slice(0, 1_000_000)
+    # Normalize column names
+    if "val" in ldf.collect_schema().names(): 
+        ldf = ldf.rename({"val": "value"})
+    
+    # Special handling for huge RGEALTI dataset to avoid memory spikes
+    if "rgealti" in dataset_config["name"]: 
+        ldf = ldf.slice(0, 1_000_000)
 
+    # Basic cleaning
     ldf = ldf.filter((pl.col("value").is_not_null()) & (pl.col("value") > 0))
     df = ldf.select(["x", "y", "value"]).collect(engine="streaming")
     
+    # Transformations
     if dataset_config.get("transform") == "log":
         df = df.with_columns(pl.col("value").log())
         
     df = df.filter(pl.col("value").is_finite())
     
+    # Sampling
     if len(df) >= target_n:
         df = df.sample(n=target_n, seed=RANDOM_STATE)
     
@@ -173,7 +196,9 @@ def run_benchmark():
                     try:
                         m = run_single_fit(model_config["class"], params, model_config.get("number_axis", 1), X_tr, y_tr, X_te, y_te)
                         fold_results.append(m)
-                    except: pass
+                    except Exception as e:
+                        # print(f"Fold failed: {e}") 
+                        pass
                 
                 if fold_results:
                     # Calculate average RMSE to decide if this is the best model
