@@ -253,16 +253,16 @@ For the Small real-world datasets, we use a subset of the French territory by fi
 
 ## Dataset Reference Table
 
-| Dataset Name | Origin | Size Category | Structure | Approx. Row Count | Description |
-|------------|------------|------------|------------|------------|------------|
-| **bdalti** | Real | Large | No Grid | \~7,000,000 | BDALTI dataset. |
-| **bdalti_48** | Real | Small | No Grid | \~40,000 | Department 48 (Lozère) subset of BDALTI. |
-| **rgealti** | Real | Large | Grid | \~22,000,000,000 | RGEALTI. |
-| **rgealti_48** | Real | Small | Grid | \~1,500,000 | Department 48 subset of RGEALTI. |
-| **S-G-Sm** | Synthetic | Small | Grid | 10,000 | Structured Grid. |
-| **S-G-Lg** | Synthetic | Large | Grid | 1,000,000 | Structured Grid. |
-| **S-NG-Sm** | Synthetic | Small | No Grid | 10,000 | 10k points, Uniform Random Distribution. |
-| **S-NG-Lg** | Synthetic | Large | No Grid | 1,000,000 | 1M points, Uniform Random Distribution. |
+| Dataset Name | Origin | Size Category | Structure | Approx. Row Count |
+|------------|------------|------------|------------|------------|
+| **bdalti** | Real | Large | No Grid | \~7,000,000 |
+| **bdalti_48** | Real | Small | No Grid | \~40,000 | 
+| **rgealti** | Real | Large | Grid | \~22,000,000,000 |
+| **rgealti_48** | Real | Small | Grid | \~1,500,000 |
+| **S-G-Sm** | Synthetic | Small | Grid | 10,000 |
+| **S-G-Lg** | Synthetic | Large | Grid | 1,000,000 |
+| **S-NG-Sm** | Synthetic | Small | No Grid | 10,000 |
+| **S-NG-Lg** | Synthetic | Large | No Grid | 1,000,000 |
 
 
 ## Performance Metrics
@@ -351,7 +351,7 @@ gam_models = ['gam', 'gam_cr']
 model_names = {
     'random_forest': 'RF', 'random_forest_cr': 'RF-CR',
     'xgboost': 'XGB', 'xgboost_cr': 'XGB-CR',
-    'mixgboost': 'MixGB', 'mixgboost_cr': 'MixGB-CR',
+    'mixgboost': 'MiGBT', 'mixgboost_cr': 'MiGBT-CR',
     'oblique_rf': 'Oblique RF', 'geoRF': 'GeoRF',
     'knn_3': 'KNN-3', 'idw_p3': 'IDW-p3',
     'kriging': 'Kriging', 'gam': 'GAM', 'gam_cr': 'GAM-CR'
@@ -500,6 +500,8 @@ Moving from 5,000 to 100,000 points represents a 20x increase in data volume. Th
 def create_table_time_scalability_v2():
     small_ds = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
     large_ds = ['rgealti', 'bdalti', 'S-G-Lg', 'S-NG-Lg']
+    very_large = ['S-NG-VLg']
+    extrem_large = ['S-NG-ELg']
     exclude_large = ['geoRF', 'gam', 'gam_cr', 'kriging'] 
     
     table_data = []
@@ -508,7 +510,9 @@ def create_table_time_scalability_v2():
         # Use .get('training_time', 0) to prevent KeyErrors
         times_sm = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in small_ds]
         times_lg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in large_ds]
-        
+        times_vlg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in very_large]
+        times_elg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in extrem_large]
+
         if times_sm:
             avg_sm = np.mean(times_sm)
             
@@ -537,6 +541,8 @@ def create_table_time_scalability_v2():
                 'Model': model_names[m_key],
                 'Avg Time (Small)': f"{avg_sm:.3f}s",
                 'Avg Time (Large)': avg_lg_str,
+                'Time (Very Large)': times_vlg,
+                'Time (Extrem Large)': times_elg,
                 'Augmentation Factor': ratio_str,
                 'sort_helper': sort_val
             })
@@ -586,16 +592,16 @@ def create_table_noisy_comparison():
     table_data = []
     
     model_names_map = {
-        'knn_3': 'KNN (3 Neighbors)',
+        'knn_3': 'KNN-3',
         'random_forest': 'Random Forest', 
         'random_forest_cr': 'Random Forest + CR',
         'xgboost': 'XGBoost',
         'xgboost_cr': 'XGBoost + CR',
-        'mixgboost': 'MixGBoost',
-        'mixgboost_cr': 'MixGBoost + CR',
+        'mixgboost': 'MiGBT',
+        'mixgboost_cr': 'MiGBT + CR',
         'oblique_rf': 'Oblique RF'
     }
-    key_models = ['knn_3', 'random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr']
+    key_models = ['knn_3', 'random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr', 'mixgboost','mixgboost_cr']
     
     for m_key in key_models:
         def get_rmse(dataset_name):

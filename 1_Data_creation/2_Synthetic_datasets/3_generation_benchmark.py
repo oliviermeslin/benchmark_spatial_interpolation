@@ -8,7 +8,7 @@ fs = s3fs.S3FileSystem(anon=False)
 s3_path = 's3://projet-benchmark-spatial-interpolation/data/synthetic'
 
 SMALL_DIM = 100
-LARGE_DIM = 1000
+LARGE_DIM = 10000
 SEED = 20170519
 
 # Setup the spatial model

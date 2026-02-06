@@ -20,6 +20,7 @@ from sklearn.metrics import mean_absolute_error, r2_score, root_mean_squared_err
 from sklearn.model_selection import KFold
 from sklearn.pipeline import Pipeline
 from sklearn.neighbors import KNeighborsRegressor
+from utils.idw import IDWRegressor
 import xgboost
 
 from utils.migbt import SklearnMIXGBooster
@@ -37,6 +38,8 @@ N_ITER_SEARCH = 5
 CV_SPLITS = 3
 RANDOM_STATE = 42
 SIZE_LARGE = 100_000
+SIZE_VERY_LARGE = 1_000_000
+SIZE_EXTREM_LARGE = 10_000_000
 
 DATASETS = [
     # --- Real World Datasets ---
@@ -47,6 +50,8 @@ DATASETS = [
     # --- Clean Synthetic Datasets  ---
     {"name": "S-G-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-G-Lg.parquet", "target_n": SIZE_LARGE},
     {"name": "S-NG-Lg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet", "target_n": SIZE_LARGE},
+    {"name": "S-NG-VLg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet", "target_n": SIZE_VERY_LARGE},
+    {"name": "S-NG-ELg", "path": "s3://projet-benchmark-spatial-interpolation/data/synthetic/S-NG-Lg.parquet", "target_n": SIZE_EXTREM_LARGE},
 
     # --- New Synthetic Datasets (Large, No Grid, Increasing Noise) ---
     # N1 = Std 0.5 (Low Noise)
@@ -105,6 +110,12 @@ MODELS = [
         "class": KNeighborsRegressor,
         "number_axis": 1,
         "param_space": {"n_neighbors": [5, 15], "weights": ["distance"], "n_jobs": [-1]}
+    },
+    {
+        "name": "idw_p3",
+        "class": IDWRegressor,
+        "number_axis": 1,
+        "param_space": {"power": [1, 2, 3, 5], "n_neighbors": [10, 20, 50]}
     }
 ]
 
