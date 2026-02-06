@@ -23,9 +23,9 @@ format:
       text: |
         \let\maketitle\relax 
     header-includes:
-     - \usepackage{algorithm}
-     - \usepackage{algpseudocode}
-     - \usepackage{amsmath}
+    - \usepackage{algorithm}
+    - \usepackage{algpseudocode}
+    - \usepackage{amsmath}
 
 execute:
   enabled: true
@@ -167,13 +167,15 @@ Generalized Additive Models represent a distinct class within the ML family. GAM
 
 #### Adapting Tree-based Methods to Geospatial Data
 
-Despite their strong performance in many domains, **tree-based methods are not specifically designed for geospatial data**. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including **spatial autocorrelation**, **anisotropy**, and the presence of large-scale spatial trends. As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires **adaptation**. Broadly speaking, there are two alternative strategies to address these challenges.
+Despite their strong performance in many domains, tree-based methods are not specifically designed for geospatial data. When applied naively to spatial coordinates, they face several well-known challenges inherent to spatial processes, including spatial autocorrelation, anisotropy, and the presence of large-scale spatial trends.
 
-<!-- For example, environmental variables such as air pollution or temperature often exhibit strong spatial autocorrelation, meaning that nearby observations are highly dependent. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display **anisotropy**, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients. -->
+Spatial autocorrelation refers to the tendency of nearby observations to exhibit similar values. For example, environmental variables such as air pollution or temperature often display strong local correlation, meaning that observations are highly dependent on their neighbors. Standard tree-based models do not explicitly account for this dependence structure and may therefore overfit local noise. Similarly, many spatial phenomena display anisotropy, where dependence varies with direction rather than distance alone, as in the case of pollutant dispersion driven by prevailing winds or hydrological variables constrained by river networks. Axis-aligned decision trees struggle to capture such directional patterns efficiently, often requiring deep trees and many splits to approximate oblique spatial gradients.
 
-The first strategy consists in **modifying the algorithms themselves** to make them more suitable for spatial data. Examples include **Geospatial Random Forest (GeoRF)**, which explicitly incorporates spatial information into the ensemble construction, and **Oblique Random Forest**, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
+Large-scale spatial trends present a particularly important challenge for tree-based methods. These trends represent smooth, gradual variations that span the entire spatial domain, such as elevation decreasing from mountainous regions to lowlands, temperature declining with latitude or altitude, or housing prices increasing radially from urban centers. Tree-based models approximate such trends using axis-aligned rectangular partitions, which is inherently inefficient. Capturing a smooth diagonal or curved trend requires many stepwise splits, leading to deep trees, high model complexity, and potential overfitting to local variations while failing to capture the global pattern effectively.
 
-The second strategy focuses on **preprocessing the spatial data** in a way that makes it better suited to standard tree-based algorithms, without altering their internal functioning. A prominent example of this approach is **coordinate rotation**, which augments the feature space with rotated versions of the original spatial coordinates. This transformation allows axis-aligned trees to effectively learn oblique spatial patterns, mitigating the geometric limitations of standard decision trees while preserving their computational efficiency and scalability.
+As a consequence, achieving optimal performance with tree-based methods in geospatial settings typically requires adaptation. Broadly speaking, there are two alternative strategies to address these challenges. The first strategy consists in modifying the algorithms themselves to make them more suitable for spatial data. Examples include Geographic Random Forest, which explicitly incorporates spatial information into the ensemble construction, and Oblique Random Forest, which allows decision boundaries that are not constrained to be parallel to the coordinate axes. By enabling oblique splits, these methods can more naturally represent spatial gradients that are misaligned with the original coordinate system.
+
+The second strategy focuses on preprocessing the spatial data in a way that makes it better suited to standard tree-based algorithms, without altering their internal functioning. A prominent example of this approach is coordinate rotation, which augments the feature space with rotated versions of the original spatial coordinates. This transformation allows axis-aligned trees to effectively learn oblique spatial patterns, mitigating the geometric limitations of standard decision trees while preserving their computational efficiency and scalability.
 
 In this benchmark, we investigate both adaptation strategies, with particular emphasis on coordinate rotation as a simple yet powerful preprocessing technique.
 
