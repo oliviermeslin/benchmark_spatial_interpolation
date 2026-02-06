@@ -460,7 +460,7 @@ plot_small_datasets_landscape()
 
 ```
 
-The results reveal substantial heterogeneity in the efficiency-accuracy frontier. Kriging, while achieving competitive prediction error, exhibits training times three orders of magnitude higher than ensemble methods due to the O(n³) complexity of covariance matrix inversion. GAM and GeoRF similarly demonstrate prohibitive computational requirements even at this moderate sample size. Given that large-scale evaluation involves datasets 20× larger, these methods are excluded from further analysis.
+The results reveal substantial heterogeneity in the efficiency-accuracy frontier. Kriging, while achieving competitive prediction error, exhibits training times three orders of magnitude higher than ensemble methods . GAM and GeoRF similarly demonstrate prohibitive computational requirements even at this moderate sample size. Given that large-scale evaluation involves datasets 20× larger, these methods are excluded from further analysis.
 
 The retained algorithms—comprising tree-based ensembles (RF, XGBoost, MixGBoost) and deterministic baselines (KNN, IDW)—strike a practical balance between statistical performance and scalability. These methods advance to evaluation on high-dimensional datasets.
 
@@ -594,7 +594,7 @@ The magnitude of improvement is modest but consistent. On clean synthetic fields
 
 ### 2.3 Robustness to Measurement Error
 
-Real spatial datasets often contain substantial noise from sensor error, spatial aggregation, or intrinsic variability. We evaluate algorithmic stability by comparing performance on clean synthetic fields versus versions corrupted with additive Gaussian noise (signal-to-noise ratio approximately 2:1). The California Housing dataset provides a complementary real-world scenario with inherent non-spatial confounding.
+Real spatial datasets often contain substantial noise from sensor error, spatial aggregation, or intrinsic variability. We evaluate algorithmic stability by comparing performance on clean synthetic fields versus versions corrupted with additive Gaussian noise . The California Housing dataset provides a complementary real-world scenario with inherent non-spatial confounding.
 
 ```{python}
 #| echo: false
@@ -639,11 +639,11 @@ display(create_table_noisy_comparison())
 
 ```
 
-Noise sensitivity varies substantially across algorithm families. KNN-3 shows catastrophic degradation (+307%), as expected from a non-parametric method without smoothing. Tree ensemble methods degrade less severely (180-265%), though this still represents a tripling or quadrupling of prediction error—hardly robust performance.
+Noise sensitivity varies substantially across algorithm families. KNN-3 shows catastrophic degradation, as expected from a non-parametric method without smoothing. Tree ensemble methods degrade less severely, though this still represents a tripling or quadrupling of prediction error—hardly robust performance.
 
-Coordinate rotation provides marginal benefit in noisy settings. On the California Housing dataset—where coordinates alone are weak predictors due to substantial non-spatial confounding—RF-CR achieves RMSE of 0.510 versus 0.545 for standard RF, a 6.4% reduction. While statistically consistent, this improvement is modest in practical terms. All methods perform poorly on this dataset (RMSE > 0.5), underscoring that spatial interpolation cannot substitute for properly specified predictive models when relevant covariates are excluded.
+Coordinate rotation provides marginal benefit in noisy settings. On the California Housing dataset where coordinates alone are weak predictors due to substantial non spatial confounding RF-CR achieves RMSE of 0.510 versus 0.545 for standard RF. While statistically consistent, this improvement is modest in practical terms. All methods perform poorly on this dataset, underscoring that spatial interpolation cannot substitute for properly specified predictive models when relevant covariates are excluded.
 
-The persistence of coordinate rotation's benefit across noise conditions suggests it improves feature representation rather than merely exploiting clean data artifacts. However, the absolute gains remain small (typically 5-7% RMSE reduction), and practitioners should weigh whether this justifies the additional preprocessing complexity in their specific application context.
+The persistence of coordinate rotation's benefit across noise conditions suggests it improves feature representation rather than merely exploiting clean data artifacts. However, the absolute gains remain small.
 
 ## Discussion
 
@@ -651,7 +651,7 @@ The training time analysis confirms that deterministic models like IDW and KNN a
 
 Overall, CR-enhanced ensembles achieve modestly lower RMSE than standard implementations , while deterministic methods maintain competitive performance without requiring coordinate augmentation. The practical significance of these gains depends on application context: in high-stakes prediction where marginal improvements matter, coordinate rotation offers a low-cost enhancement; for exploratory analysis or rapid prototyping, standard implementations suffice.
 
-The central question was whether modern ensemble methods could replace traditional spatial interpolators. The answer is nuanced. Coordinate rotation enables tree-based methods to match or slightly exceed kriging on computational grounds (100× faster) while achieving comparable prediction error on large datasets. However, the improvements over standard tree implementations are modest—typically 5-7% RMSE reduction—and come at the cost of feature engineering overhead.
+The central question was whether modern ensemble methods could replace traditional spatial interpolators. The answer is nuanced. Coordinate rotation enables tree-based methods to match or slightly exceed kriging on computational grounds  while achieving comparable prediction error on large datasets. However, the improvements over standard tree implementations are modest—typically 5-7% RMSE reduction—and come at the cost of feature engineering overhead.
 
 Deterministic methods (KNN, IDW) remain highly competitive for rapid prototyping and applications where interpretability matters. They require no hyperparameter tuning, no training phase, and produce results instantly. Their prediction errors are only marginally higher than optimized ensemble methods in many scenarios. Therefore, the "best" algorithm depends critically on problem constraints: ensemble methods with coordinate rotation offer the highest accuracy when computational budget and implementation complexity permit; deterministic methods provide practical alternatives when simplicity, speed, or transparency dominate.
 
