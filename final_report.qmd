@@ -22,7 +22,7 @@ format:
     include-in-header:
       text: |
         \let\maketitle\relax 
-          header-includes:
+    header-includes:
     - \usepackage{algorithm}
     - \usepackage{algpseudocode}
     - \usepackage{amsmath}
