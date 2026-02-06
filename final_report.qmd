@@ -757,7 +757,17 @@ The integration of **Coordinate Rotation (CR)** into ensemble methods allows for
 
 # References
 
-All references cited in the report.
+Aalto, Juha, et al. "Spatial Interpolation of Monthly Climate Data for Finland: Comparing the Performance of Kriging and Generalized Additive Models." *Theoretical and Applied Climatology*, vol. 112, no. 1, 2013, pp. 99-111.
+
+Chen, Meifang, Changho Lee, and Yongwan Chun. "A Machine Learning Approach Using Spatially Explicit K-Nearest Neighbors for House Price Predictions." *ISPRS International Journal of Geo-Information*, vol. 15, no. 1, 2026, p. 46.
+
+Cressie, Noel. Statistics for spatial data. John Wiley & Sons, 2015.
+
+Gaudart, Jean, et al. "Oblique Decision Trees for Spatial Pattern Detection: Optimal Algorithm and Application to Malaria Risk." *BMC Medical Research Methodology*, vol. 5, no. 1, 2005, p. 22.
+
+Geerts, Margot, Seppe Vanden Broucke, and Jochen De Weerdt. "GeoRF: A Geospatial Random Forest." *Data Mining and Knowledge Discovery*, vol. 38, no. 6, 2024, pp. 3414-3448.
+
+Geerts, Margot, Seppe Vanden Broucke, and Jochen De Weerdt. "A Spatial Loss Function for Gradient Boosted Trees." *CEUR Workshop Proceedings*, R. Piskac c/o Redaktion Sun SITE Informatik V RWTH Aachen, 2024.
 
 # Appendix A: Detailed Results
 
