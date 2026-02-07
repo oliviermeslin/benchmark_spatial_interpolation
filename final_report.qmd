@@ -66,7 +66,7 @@ Olivier \textsc{Meslin} \\ \vspace{0.6cm}
 
 # Abstract
 
-Brief summary of the project, including: - the spatial interpolation problem, - the benchmarked methods, - the experimental design, - the main empirical results, - and the key conclusions.
+Spatial interpolation is a fundamental challenge in data analysis, necessitating robust methods for estimating unknown values from scattered observations. This study provides a comprehensive benchmark to identify the most effective algorithms currently available. We begin with a literature review to classify existing techniques and analyze their theoretical advantages. To expand the scope of possible solutions, we also introduce and test ensemble learning models integrated with coordinate rotation alongside traditional methods. Our experimental framework employs a hierarchical evaluation strategy: initial screening on small datasets is used to discriminate and filter underperforming algorithms, followed by testing of the remaining candidates on complex, high-dimensional datasets. We compare these methods based on scalability, computational efficiency, and robustness. Ultimately, this study offers a definitive guide to the "state-of-the-art" in spatial interpolation, highlighting which algorithms perform best across varying levels of difficulty and data density.
 
 # Introduction
 
