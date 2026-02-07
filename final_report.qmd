@@ -42,7 +42,7 @@ execute:
 \rule{\linewidth}{0.4mm} \\[0.3cm]
 {\Large\bfseries \Large{Benchmark Algorithm of Ensemblist Methods on Spatial Data.}}\\[0.2cm]
 \rule{\linewidth}{0.4mm}\\[0.3cm]
-\large{\textsc{Quarto Report}}
+\large{\textsc{$https://github.com/oliviermeslin/benchmark_spatial_interpolation.git$}}
  
 \vskip 80pt
  
