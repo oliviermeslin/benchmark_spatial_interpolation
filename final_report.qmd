@@ -86,13 +86,13 @@ Overview of the benchmarking framework and experimental pipeline.
 
 ## Algorithms Considered
 
-|                                       |                                    |
-|----------------------------------------|--------------------------------|
-| A\) Generalized Additive Models (GAM) | F\) Nearest Neighbor Interpolation |
-| B\) GeoSpatial Random Forest          | G\) Oblique Random Forest          |
-| C\) Gradient Boosting                 | H\) Ordinary Kriging               |
-| D\) Inverse Distance Weighting (IDW)  | I\) Random Forest                  |
-| E\) MI-GBT                            | J\) XGBoost                        |
+|                                                    |                                    |
+|----------------------------------------------------|------------------------------------|
+| A\) Generalized Additive Models - GAM ()           | F\) Nearest Neighbor Interpolation |
+| B\) GeoSpatial Random Forest (Geerts et al. 2024a) | G\) Oblique Random Forest          |
+| C\) Gradient Boosting                              | H\) Ordinary Kriging               |
+| D\) Inverse Distance Weighting - IDW ()            | I\) Random Forest                  |
+| E\) MI-GBT (Geerts et al. 2024b)                   | J\) XGBoost                        |
 
 # Comparison of Spatial Interpolation Methods
 
@@ -126,7 +126,7 @@ There are several types of Kriging methods based on different assumptions about 
 
 Formally, the Ordinary Kriging predictor at an unobserved location $s_0$ is defined as a linear combination of the observed values, $\hat{Z}(s_0) = \sum_{i=1}^{n} \lambda_i \, Z(s_i)$, subject to the unbiasedness constraint $\sum_{i=1}^{n} \lambda_i = 1$. The weights $\lambda_i$ are chosen so as to minimize the prediction error variance $\operatorname{Var}\bigl(\hat{Z}(s_0) - Z(s_0)\bigr)$ under the assumed variogram model.
 
-These theoretical foundations give Kriging several important advantages. Under its assumptions, Ordinary Kriging is the **Best Linear Unbiased Predictor (BLUP)**, meaning that among all predictors that are linear combinations of the data and unbiased, it minimizes the variance of the prediction error **(Cressie, 1993; Chilès and Delfiner, 2012)**. It also guarantees exact interpolation at observed locations and produces smooth, continuous surfaces, avoiding the abrupt artifacts that may arise with simpler approaches. In addition, it naturally provides measures of predictive uncertainty, enabling the construction of confidence intervals.
+These theoretical foundations give Kriging several important advantages. Under its assumptions, Ordinary Kriging is the **Best Linear Unbiased Predictor (BLUP)**, meaning that among all predictors that are linear combinations of the data and unbiased, it minimizes the variance of the prediction error. It also guarantees exact interpolation at observed locations and produces smooth, continuous surfaces, avoiding the abrupt artifacts that may arise with simpler approaches. In addition, it naturally provides measures of predictive uncertainty, enabling the construction of confidence intervals.
 
 However, these theoretical advantages come with substantial practical challenges. Kriging has **cubic computational complexity**, as it requires the inversion of an $n \times n$ covariance matrix, where $n$ is the number of observations. As a result, it becomes **prohibitively slow for datasets larger than roughly 10,000 points**, limiting its applicability in large-scale spatial problems.
 
@@ -158,12 +158,9 @@ Gradient Boosting methods, such as **XGBoost** and **MI-GBT**, adopt a different
 
 A key advantage of tree-based methods lies in their broad **applicability across a wide range of prediction tasks**, as they can be employed **without relying on strong assumptions** about the underlying data-generating process. Moreover, they are highly extensible, allowing additional covariates to be seamlessly incorporated into the model. For instance, in applications such as housing price prediction, spatial coordinates can be combined with socioeconomic or structural variables, a level of flexibility that is difficult to achieve with traditional geostatistical approaches.
 
-
-
 #### Generalized Additive Models
 
 Generalized Additive Models represent a distinct class within the ML family. GAMs model the target variable as a **sum of smooth nonlinear functions of the input features**, balancing flexibility and interpretability. While not tree-based, GAMs can capture nonlinear spatial trends through smooth functions of the coordinates, positioning them at the boundary between classical statistical modeling and modern machine learning. Their additive structure makes them more interpretable than ensemble methods, but also limits their ability to represent highly complex spatial interactions.
-
 
 #### Adapting Tree-based Methods to Geospatial Data
 
@@ -765,15 +762,47 @@ The integration of **Coordinate Rotation (CR)** into ensemble methods allows for
 
 Aalto, Juha, et al. "Spatial Interpolation of Monthly Climate Data for Finland: Comparing the Performance of Kriging and Generalized Additive Models." *Theoretical and Applied Climatology*, vol. 112, no. 1, 2013, pp. 99-111.
 
+Anava, Oren, and Kfir Levy. "k*-Nearest Neighbors: From Global to Local." *Advances in Neural Information Processing Systems*, vol. 29, 2016.
+
+Barry, Ronald Paul, and M. Jay Ver Hoef. "Blackbox Kriging: Spatial Prediction without Specifying Variogram Models." *Journal of Agricultural, Biological, and Environmental Statistics*, 1996, pp. 297-322.
+
+Bentéjac, Candice, Anna Csörgő, and Gonzalo Martínez-Muñoz. "A Comparative Analysis of Gradient Boosting Algorithms." *Artificial Intelligence Review*, vol. 54, no. 3, 2021, pp. 1937-1967.
+
+Borm, Conrad. "Kriging Models: An Extensive Analysis of Their Current State, Applicability, Advantages and Limitations." 2024. Utrecht University Student Theses, https://studenttheses.uu.nl/handle/20.500.12932/48040.
+
+Bostan, Pınar. "Basic Kriging Methods in Geostatistics." *Yuzuncu Yıl University Journal of Agricultural Sciences*, vol. 27, no. 1, 2017, pp. 10-20.
+
 Chen, Meifang, Changho Lee, and Yongwan Chun. "A Machine Learning Approach Using Spatially Explicit K-Nearest Neighbors for House Price Predictions." *ISPRS International Journal of Geo-Information*, vol. 15, no. 1, 2026, p. 46.
 
-Cressie, Noel. Statistics for spatial data. John Wiley & Sons, 2015.
+Ciampiconi, Lorenzo, et al. "A Survey and Taxonomy of Loss Functions in Machine Learning." *arXiv preprint arXiv:2301.05579*, 2023.
+
+Cressie, Noel. *Statistics for Spatial Data*. John Wiley & Sons, 2015.
+
+Dobson, Annette J., and Adrian G. Barnett. *An Introduction to Generalized Linear Models*. Chapman and Hall/CRC, 2018.
 
 Gaudart, Jean, et al. "Oblique Decision Trees for Spatial Pattern Detection: Optimal Algorithm and Application to Malaria Risk." *BMC Medical Research Methodology*, vol. 5, no. 1, 2005, p. 22.
 
+Geerts, Margot, Seppe Vanden Broucke, and Jochen De Weerdt. "A Spatial Loss Function for Gradient Boosted Trees." *CEUR Workshop Proceedings*, R. Piskac c/o Redaktion Sun SITE Informatik V RWTH Aachen, 2024.
+
 Geerts, Margot, Seppe Vanden Broucke, and Jochen De Weerdt. "GeoRF: A Geospatial Random Forest." *Data Mining and Knowledge Discovery*, vol. 38, no. 6, 2024, pp. 3414-3448.
 
-Geerts, Margot, Seppe Vanden Broucke, and Jochen De Weerdt. "A Spatial Loss Function for Gradient Boosted Trees." *CEUR Workshop Proceedings*, R. Piskac c/o Redaktion Sun SITE Informatik V RWTH Aachen, 2024.
+Hu, Hongda, and Hong Shu. "An Improved Coarse-Grained Parallel Algorithm for Computational Acceleration of Ordinary Kriging Interpolation." *Computers & Geosciences*, vol. 78, 2015, pp. 44-52.
+
+Kern, Christoph, Thomas Klausch, and Frauke Kreuter. "Tree-Based Machine Learning Methods for Survey Research." *Survey Research Methods*, vol. 13, no. 1, 2019.
+
+Lu, George Y., and David W. Wong. "An Adaptive Inverse-Distance Weighting Spatial Interpolation Technique." *Computers & Geosciences*, vol. 34, no. 9, 2008, pp. 1044-1055.
+
+Nelder, John Ashworth, and Robert WM Wedderburn. "Generalized Linear Models." *Journal of the Royal Statistical Society Series A: Statistics in Society*, vol. 135, no. 3, 1972, pp. 370-384.
+
+Oliver, M. A., and R. Webster. "A Tutorial Guide to Geostatistics: Computing and Modelling Variograms and Kriging." *Catena*, vol. 113, 2014, pp. 56-69.
+
+Pilz, Jürgen, and Gunter Spöck. "Why Do We Need and How Should We Implement Bayesian Kriging Methods." *Stochastic Environmental Research and Risk Assessment*, vol. 22, no. 5, 2008, pp. 621-632.
+
+Syam, Niladri, and Rajeeve Kaul. "Random Forest, Bagging, and Boosting of Decision Trees." *Machine Learning and Artificial Intelligence in Marketing and Sales: Essential Reference for Practitioners and Data Scientists*, Emerald Publishing Limited, 2021, pp. 139-182.
+
+Wong, David WS. "Interpolation: Inverse-Distance Weighting." *International Encyclopedia of Geography: People, the Earth, Environment and Technology: People, the Earth, Environment and Technology*, 2016, pp. 1-7.
+
+Wood, Simon N., Yannig Goude, and Simon Shaw. "Generalized Additive Models for Large Data Sets." *Journal of the Royal Statistical Society Series C: Applied Statistics*, vol. 64, no. 1, 2015, pp. 139-155.
 
 # Appendix A: Detailed Results
 
