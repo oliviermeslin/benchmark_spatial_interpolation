@@ -80,8 +80,6 @@ To achieve a robust evaluation, this study examines eight datasets comprising bo
 
 # Methodology
 
-## General Framework
-
 Overview of the benchmarking framework and experimental pipeline.
 
 ## Algorithms Considered
@@ -94,7 +92,7 @@ Overview of the benchmarking framework and experimental pipeline.
 | D\) Inverse Distance Weighting - IDW ()            | I\) Random Forest                  |
 | E\) MI-GBT (Geerts et al. 2024b)                   | J\) XGBoost                        |
 
-# Comparison of Spatial Interpolation Methods
+## Comparison of Spatial Interpolation Methods
 
 Our benchmark compares a large range of spatial interpolation algorithms that can be grouped into three distinct families based on their theoretical foundations: deterministic methods, geostatistical methods, and machine learning approaches. Understanding these distinctions is essential for interpreting our results and providing practical guidance for model selection.
 
