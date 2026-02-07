@@ -285,7 +285,7 @@ Our validation strategy employs a robust Randomized Search with K-Fold Cross-Val
 
 # Results
 
-The study follows a two-phase selection process. First, we benchmark all algorithm families on small datasets (N≈5,000)     to map the initial trade-offs between precision and computational cost. Based on these results, we pre-select the most efficient candidates to undergo stress testing on large datasets (N≈100,000) and noisy scenarios (synthetic noise and real-world housing data), assessing their true scalability and robustness in difficult conditions.
+The study follows a two-phase selection process. First, we benchmark all algorithm families on small datasets (N≈5,000) to map the initial tradeoffs between precision and computational cost. Based on these results, we preselect the most efficient candidates to undergo further tests on larger datasets and noisy scenarios, assessing their true scalability and robustness in different conditions.
 
 ```{python}
 #| echo: false
@@ -381,13 +381,11 @@ def get_model_color(model):
     if model in advanced_tree_models: return color_advanced_tree
     if model in gam_models: return color_gam
     return '#888888'
-
-
 ```
 
-## Small Datasets: What Matters?
+## Small Dataset Screening: Computational Efficiency vs Accuracy
 
-As mantioned previsouly, we begin our analysis by running all candidate algorithms on "Small" datasets (). This step allows us to evaluate the trade-off between **Training Cost (Time)** and **Predictive Accuracy (RMSE)** before scaling up.
+As mentioned previously, we begin our analysis by running all candidate algorithms on Small datasets. This step allows us to evaluate the tradeoff between **Training Cost (Time)** and **Predictive Accuracy (RMSE)** before scaling up.
 
 The figure below plots the Training Time (x-axis, log scale) against the RMSE (y-axis). The ideal algorithm would be located in the **bottom-left corner** (fast and accurate).
 
@@ -474,92 +472,163 @@ plot_small_datasets_landscape()
 
 ```
 
-The plot reveals a distinct separation in computational profiles.
+The plot reveals different computational profiles for the families of algorithms. Using the results obtained, a selection of models is made for evaluation on larger datasets. This is a crucial step that avoids wasting computational resources on models that are not competitive in terms of training time.
 
-1. **Discarded Models:**
-* **GAM & GeoRF (Green & Red):** These models show extreme training times even on small data without providing competitive performance. Running these on datasets 20x larger would require prohibitive compute time without guaranteeing superior performance.
-* **Kriging (Purple):** While precise, its training time is orders of magnitude higher. Given its complexity, it is theoretically intractable for large datasets.
+The GAM, GeoRF exhibit extreme training times even on modest sample sizes. Extrapolating these computational demands to datasets an order of magnitude larger suggests prohibitive resource requirements that would render them impractical for operational use. For the case of Kriging, its complexity leads to training times that grow rapidly with sample size, making it infeasible for larger datasets. These methods are therefore excluded from further analysis, as their computational inefficiency outweighs any potential accuracy benefits they may offer.
 
-2. **Retained Models:**
-* **Ensembles (Orange):** RF, XGBoost, and MI-GBT offer the best balance (fast and accurate). We will keep them with their coordinates rotation alternatives. 
-* **Deterministic (Blue):** Retained as baselines due to their near-instant speed with strong accuracy.
+The remaining candidates demonstrate more favorable computational profiles. Ensemble methods cluster in the efficient region of the accuracy-time tradeoff space, delivering low prediction error with manageable training costs. Deterministic methods also remain in the analysis due to their near instantaneous training and competitive predictive performance. Their simplicity establishes a demanding baseline: any machine learning enhancement must deliver substantial accuracy gains to justify increased algorithmic complexity.
 
-Consequently, only the **Ensemble** and **Deterministic** families are advanced to the next phase.
+## Large-Scale Performance Evaluation
 
-## Who is the Better?
+### Scalability Analysis
 
-### What about scalability ?
-
-Moving from 5,000 to 100,000 points represents a 20x increase in data volume. The table below details the "Time Augmentation" cost. We define the **Scalability Cost** as the ratio of time for large dataset over the time for small dataset.
+In the following step the scalability of the algorithms is evaluated using as comparison metric the **Augmentation Factor** defined as the ratio of time for large dataset over the time for small dataset. This metrics depends on the algorithm's parameter and specific dataset, so it is not rigorous from a statistical point of view, but it provides a useful measure of how well the training time scales as the dataset size increases. 
+riscrivere che augmentation e 20X 
 
 ```{python}
 #| echo: false
-def create_table_time_scalability_v2():
+import pandas as pd
+import numpy as np
+from IPython.display import display
+
+def display_scalability_table_colored():
+    # --- Configuration ---
     small_ds = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
     large_ds = ['rgealti', 'bdalti', 'S-G-Lg', 'S-NG-Lg']
-    very_large = ['S-NG-VLg']
-    extrem_large = ['S-NG-ELg']
-    exclude_large = ['geoRF', 'gam', 'gam_cr', 'kriging'] 
+    excluded_models = ['geoRF', 'gam', 'gam_cr', 'kriging']
     
     table_data = []
     
-    for m_key in model_names.keys():
-        # Use .get('training_time', 0) to prevent KeyErrors
-        times_sm = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in small_ds]
-        times_lg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in large_ds]
-        times_vlg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in very_large]
-        times_elg = [r.get('training_time', 0) for r in results if r['model'] == m_key and r['dataset'] in extrem_large]
-
-        if times_sm:
-            avg_sm = np.mean(times_sm)
+    # --- Data Collection ---
+    for m_key, m_name in model_names.items():
+        if m_key in excluded_models:
+            continue
             
-            if m_key in exclude_large:
-                avg_lg_str = "Too Slow"
-                ratio_str = "-"
-                sort_val = 9999.0
-            elif times_lg:
-                avg_lg = np.mean(times_lg)
-                if avg_lg > 0:
-                    avg_lg_str = f"{avg_lg:.2f}s"
-                    ratio = avg_lg / avg_sm if avg_sm > 0 else 0
-                    ratio_str = f"{ratio:.1f}x"
-                    sort_val = avg_lg
-                else:
-                    # Time is 0 or missing in data
-                    avg_lg_str = "N/A" 
-                    ratio_str = "-"
-                    sort_val = 9999.0
-            else:
-                avg_lg_str = "NA"
-                ratio_str = "-"
-                sort_val = 9999.0
-
-            table_data.append({
-                'Model': model_names[m_key],
-                'Avg Time (Small)': f"{avg_sm:.3f}s",
-                'Avg Time (Large)': avg_lg_str,
-                'Time (Very Large)': times_vlg,
-                'Time (Extrem Large)': times_elg,
-                'Augmentation Factor': ratio_str,
-                'sort_helper': sort_val
-            })
+        # Get color using your function
+        row_color = get_model_color(m_key)
             
-    df = pd.DataFrame(table_data)
-    df = df.sort_values('sort_helper').drop('sort_helper', axis=1)
+        times_sm = [r.get('training_time', 0) for r in results 
+                   if r['model'] == m_key and r['dataset'] in small_ds]
+        times_lg = [r.get('training_time', 0) for r in results 
+                   if r['model'] == m_key and r['dataset'] in large_ds]
+        
+        avg_sm = np.mean(times_sm) if times_sm else 0
+        avg_lg = np.mean(times_lg) if times_lg else 0
+        
+        if avg_sm > 0 and avg_lg > 0:
+            factor = avg_lg / avg_sm
+            factor_str = f"{factor:.1f}x"
+        else:
+            factor = 0
+            factor_str = "-"
+
+        table_data.append({
+            'Model': m_name,
+            'Avg Time (Small)': f"{avg_sm:.3f}s",
+            'Avg Time (Large)': f"{avg_lg:.2f}s",
+            'Augmentation Factor': factor_str,
+            '_sort_key': factor,
+            '_row_color': row_color  # Store color for styling
+        })
     
-    return df
+    df = pd.DataFrame(table_data)
+    
+    # --- Styling Function ---
+    def color_rows(row):
+        # Apply the stored color to all visible columns
+        color = row['_row_color']
+        return [f'color: {color}; font-weight: bold' for _ in row]
 
-display(create_table_time_scalability_v2())
+    # --- Display ---
+    if not df.empty:
+        df_sorted = df.sort_values('_sort_key')
+        
+        # Apply style
+        styled_df = (df_sorted.style
+                     .apply(color_rows, axis=1)          # Apply color logic
+                     .hide(axis="index")                 # Hide Index
+                     .hide(subset=['_sort_key', '_row_color'], axis=1)) # Hide helper columns
+        
+        display(styled_df)
 
+display_scalability_table_colored()
 ```
 
-Deterministic methods maintain near-constant training times regardless of dataset size, consistent with their distance-based interpolation schemes. Tree ensemble methods exhibit moderate scaling, with augmentation factors typically between 15× and 25×, slightly sublinear relative to the data increase due to early stopping and sampling strategies in boosting algorithms.
+**Scaling Behavior Analysis:**
 
-### Can you be accurate on difficult data?
+The analysis on larger datasets shows different behaviour for the considered algortihms. **Deterministic methods** exhibit one of the highest augmentation factor both for the KNN and for IDW, however this not implies a bad scalability because it still remains the fastest one. Also the **Tree ensemble methods** are able to scale well, with a reasonable augmentation factors. The XGBoost based model shows a particular pattern, infact, its training time for the large datasets is lower than one of the small datasets.
 
-The previous data used, whether real or synthetic, was relatively smooth. However, real-world scenarios often involve noisy data, such as housing prices, where variability cannot be perfectly modeled by coordinates alone. To test the models' resilience, we evaluated them on **three large synthetic datasets with increasing noise levels** (`S-NG-Lg-N1`, `N2`, `N3`) and one real noisy dataset: **California Housing**.
+Adesso andiamo a comparare i risultati per dataset piu grandi (grandissimi)
 
-The table below details the RMSE progression as noise increases.
+```{python}
+#| echo: false
+import pandas as pd
+from IPython.display import display
+
+def display_stress_test_table_colored():
+    # --- Configuration ---
+    target_datasets = ['S-NG-Lg', 'S-NG-VLg', 'S-NG-ELg']
+    excluded_models = ['geoRF', 'gam', 'gam_cr', 'kriging']
+    
+    table_data = []
+    
+    # --- Data Collection ---
+    for m_key, m_name in model_names.items():
+        if m_key in excluded_models:
+            continue
+            
+        # Get color
+        row_color = get_model_color(m_key)
+
+        row = {
+            'Model': m_name,
+            '_row_color': row_color
+        }
+        
+        # Helper to find time
+        def get_time(d_name):
+            val = next((r.get('training_time', 0) for r in results 
+                        if r['model'] == m_key and r['dataset'] == d_name), None)
+            return val
+
+        t_lg = get_time('S-NG-Lg')
+        t_vlg = get_time('S-NG-VLg')
+        t_elg = get_time('S-NG-ELg')
+
+        row['Time (S-NG-Lg)']  = f"{t_lg:.2f}s" if t_lg else "-"
+        row['Time (S-NG-VLg)'] = f"{t_vlg:.2f}s" if t_vlg else "-"
+        row['Time (S-NG-ELg)'] = f"{t_elg:.2f}s" if t_elg else "-"
+        
+        # Sort key
+        row['_sort_key'] = t_lg if t_lg else 99999
+        
+        table_data.append(row)
+
+    df = pd.DataFrame(table_data)
+    
+    # --- Styling Function ---
+    def color_rows(row):
+        color = row['_row_color']
+        return [f'color: {color}; font-weight: bold' for _ in row]
+
+    # --- Display ---
+    if not df.empty:
+        df_sorted = df.sort_values('_sort_key')
+        
+        styled_df = (df_sorted.style
+                     .apply(color_rows, axis=1)
+                     .hide(axis="index")
+                     .hide(subset=['_sort_key', '_row_color'], axis=1))
+        
+        display(styled_df)
+
+display_stress_test_table_colored()
+```
+
+### Robustness to Noise
+
+The previous data used, whether real or synthetic, was relatively smooth. However, real-world scenarios often involve noisy data, such as housing prices, where variability cannot be perfectly modeled by coordinates alone. To test the models' resilience, we evaluated them on **three large synthetic datasets with increasing noise levels** (`S-NG-Lg-N1`, `N2`, `N3`) and one real noisy dataset: **California Housing**, trying to highlight the impact of coordinate rotation on RMSE in these conditions.
+
 
 ```{python}
 #| echo: false
@@ -581,26 +650,29 @@ def create_table_noisy_comparison():
         return pd.DataFrame()
 
     # 2. DEFINE TARGETS
-    clean_ds = 'S-NG-Lg'  
+    clean_ds = 'S-NG-Lg'
     noise_levels = ['S-NG-Lg-N1', 'S-NG-Lg-N2', 'S-NG-Lg-N3']
     housing_ds = 'cal_housing'
-    
+
     # 3. BUILD TABLE
     table_data = []
     
     model_names_map = {
         'knn_3': 'KNN-3',
-        'random_forest': 'Random Forest', 
+        'random_forest': 'Random Forest',
         'random_forest_cr': 'Random Forest + CR',
         'xgboost': 'XGBoost',
         'xgboost_cr': 'XGBoost + CR',
         'mixgboost': 'MiGBT',
         'mixgboost_cr': 'MiGBT + CR',
-        'oblique_rf': 'Oblique RF'
+        'oblique_rf': 'Oblique RF',
+        'idw_p3': 'IDW-p3',
     }
-    key_models = ['knn_3', 'random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr', 'mixgboost','mixgboost_cr']
     
+    key_models = ['knn_3', 'idw_p3', 'oblique_rf' ,'random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr', 'mixgboost','mixgboost_cr']
+
     for m_key in key_models:
+        # Inner function defined here to capture 'm_key' from the loop scope
         def get_rmse(dataset_name):
             found = [r for r in results if r['model'] == m_key and r['dataset'] == dataset_name]
             return found[0]['rmse'] if found else None
@@ -612,6 +684,7 @@ def create_table_noisy_comparison():
         v_housing = get_rmse(housing_ds)
         
         degradation_str = "-"
+        
         if v_clean and v_n3:
             deg = ((v_n3 - v_clean) / v_clean) * 100
             degradation_str = f"+{deg:.0f}%"
@@ -625,9 +698,9 @@ def create_table_noisy_comparison():
             'Max Degr.': degradation_str,
             'Housing RMSE': f"{v_housing:.3f}" if v_housing else "-"
         })
-            
+
     df = pd.DataFrame(table_data)
-    
+
     # 4. DISPLAY WITHOUT INDEX
     if df.empty:
         return Markdown("### No data available to display.")
@@ -637,12 +710,17 @@ def create_table_noisy_comparison():
 
 # Display the result
 display(create_table_noisy_comparison())
-
 ```
 
-### Coordinates Rotation ?
+**Noise Robustness:**
 
-With computational feasibility established, we analyze the impact of **Coordinate Rotation (CR)** on these large and noisy datasets. The table below compares the standard version of each ensemble algorithm against its CR counterpart for each dataset and show the improvement in term of RMSE but also in term of time training.
+A primary observation is that while the integration of CR consistently enhances model accuracy in low-noise environments—notably yielding a substantial reduction in **Root Mean Square Error (RMSE)** for both Random Forest (RF) and XGBoost—this advantage tends to diminish as the signal-to-noise ratio decreases. As noise levels intensify, the performance gap between standard and CR-augmented versions converges. In certain high-noise scenarios, the CR variants even exhibit a marginal increase in error, suggesting a practical threshold for the technique. From a computational efficiency standpoint, this indicates that the overhead of applying CR may not be justified when data quality is significantly compromised, as the incremental gains in precision no longer offset the increased processing time.
+
+Furthermore, the data reveals a critical shift in model hierarchy as environmental complexity grows. While the **K-Nearest Neighbors (KNN)** algorithm demonstrates superior precision on clean datasets, it proves particularly susceptible to stochastic interference. This vulnerability is quantified by the **Maximum Degradation (Max Degr.)**, where KNN shows a significantly higher rate of error escalation compared to its ensemble-based counterparts. Such a trend points to a structural limitation inherent in deterministic models: their foundational assumptions of simplicity and local continuity struggle to capture underlying patterns once they are obscured by heavy noise. Finally, the analysis of the **California Housing** dataset assests with real-world examples.
+
+### Impact of Coordinate Rotation
+
+Having established computational feasibility and noise robustness patterns, attention turns to quantifying the specific contribution of coordinate rotation across diverse data conditions. The comparative evaluation considers high-volume datasets characterized by varying degrees of noise and structural complexity, consolidating observations from previous experiments into a coherent assessment framework. For each ensemble algorithm, performance is contrasted between standard implementations and their coordinate-rotated counterparts, examining both prediction error reduction and the associated computational burden required to achieve these gains.
 
 ```{python}
 #| echo: false
@@ -660,7 +738,9 @@ def create_table_cr_manual_grouping():
         ('S-NG-Lg', 'Syn-NoGrid'), 
         ('S-NG-Lg-N1', 'Syn-NG-N1'), 
         ('S-NG-Lg-N2', 'Syn-NG-N2'), 
-        ('S-NG-Lg-N3', 'Syn-NG-N3')
+        ('S-NG-Lg-N3', 'Syn-NG-N3'), 
+        ('S-NG-VLg', 'Syn-VeryLarge'), 
+        ('S-NG-ELg', 'Syn-ExtremLarge')
     ]
     
     # Pairs: (Standard Key, CR Key, Short Display Name)
@@ -740,7 +820,13 @@ def create_table_cr_manual_grouping():
 display(create_table_cr_manual_grouping())
 ```
 
- 
+
+The results reveal a clear relationship between noise levels and the effectiveness of coordinate rotation. On structured datasets with low noise, CR delivers substantial improvements—RMSE reductions can exceed 60% on the RGEALTI dataset. However, these gains diminish progressively as noise increases. In highly noisy synthetic scenarios, the benefit becomes marginal or disappears entirely. Real-world datasets like California Housing show different behavior: when spatial autocorrelation dominates the signal, CR remains effective despite noise. This pattern indicates that CR is not a universal solution but works best when geographic structure genuinely drives the predictions rather than serving as a weak proxy for other factors.
+
+The computational cost of coordinate rotation deserves attention. Training time increases substantially because the algorithm must process the expanded feature space. However, the absolute time penalty remains modest. Even with rotation, training completes within seconds rather than minutes for these datasets, maintaining practical feasibility. The augmented algorithms stay competitive with their standard counterparts in terms of wall-clock time, simply shifting from near-instantaneous to still-fast execution.
+
+These observations suggest that coordinate rotation offers favorable tradeoffs for operational spatial modeling. The accuracy improvements justify the computational overhead when working with real world geographic data where spatial patterns matter. However, practitioners should assess their data characteristics before committing to the approach. When noise dominates the signal or coordinates correlate poorly with outcomes, the added complexity yields diminishing returns. The technique works when spatial structure exists; it cannot create predictive power where coordinates lack information.
+
 ## Discussion
 
 The training time analysis confirms that deterministic models like IDW and KNN are nearly instantaneous, while advanced tree-based models and GAMs carry significantly higher computational burden. The scalability analysis shows that ensemble methods scale reasonably to large datasets, though their axis-aligned split logic creates artifacts on oblique spatial patterns without coordinate rotation. Performance across grid and non-grid structures reveals this geometric limitation clearly.
@@ -804,32 +890,3 @@ Wong, David WS. "Interpolation: Inverse-Distance Weighting." *International Ency
 
 Wood, Simon N., Yannig Goude, and Simon Shaw. "Generalized Additive Models for Large Data Sets." *Journal of the Royal Statistical Society Series C: Applied Statistics*, vol. 64, no. 1, 2015, pp. 139-155.
 
-# Appendix A: Detailed Results
-
-## Synthetic Small Grid
-
-Detailed tables and figures.
-
-## Synthetic Small No-Grid
-
-Detailed tables and figures.
-
-## Synthetic Large Grid
-
-Detailed tables and figures.
-
-## Synthetic Large No-Grid
-
-Detailed tables and figures.
-
-## Real Small Datasets
-
-Detailed tables and figures.
-
-## Real Large Datasets
-
-Detailed tables and figures.
-
-# Appendix B: Algorithm Parameters
-
-Detailed hyperparameter settings for each algorithm.

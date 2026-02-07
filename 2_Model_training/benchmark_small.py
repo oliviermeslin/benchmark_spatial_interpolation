@@ -82,6 +82,12 @@ MODELS = [
         "param_space": {"n_estimators": [200, 500, 1000], "learning_rate": [0.01, 0.05, 0.1], "max_depth": [4, 6, 8, 10], "n_jobs": [-1], "random_state": [42], "objective": ["reg:squarederror"]}
     },
     {
+        "name": "mixgboost",
+        "class": SklearnMIXGBooster,
+        "number_axis": 1,
+        "param_space": {"k": [10, 20, 40], "lamb": [0.01, 0.1, 0.5], "learning_rate": [0.05, 0.1], "n_estimators": [200, 500], "max_depth": [6, 10, 12], "n_jobs": [-1]}
+    },
+    {
         "name": "mixgboost_cr",
         "class": SklearnMIXGBooster,
         "number_axis": 23,

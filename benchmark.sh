@@ -26,7 +26,7 @@ fi
 # 2. Run Benchmark LARGE (and Noisy)
 # ---------------------------------------------------------
 echo "Step 2: Running Benchmark on LARGE/NOISY datasets..."
-uv run python 2_Model_training/benchmark_large.py
+# uv run python 2_Model_training/benchmark_large.py
 
 # Upload large results immediately to S3
 if [ -f "$WORK_DIR/results/results_large_noisy.json" ]; then
