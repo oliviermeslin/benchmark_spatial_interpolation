@@ -228,38 +228,50 @@ From a geometric perspective, coordinate rotation can be interpreted as a change
 
 ## Datasets
 
-There will be 8 datasets to cover combinations of:
+There will be plenty datasets to cover combinations of:
 
 -   **Real or Synthetic**
 -   **Large or Small**
 -   **Grid or No Grid**
 
+It will also be about, very large, extremly large datasets and noisy datasets. 
+
 For the **synthetic ones**, they are built following the idea that we need some data spatially correlated, be able to respect our different criteria:
 
 -   **Spatial Correlation**: We use a **Matérn covariance model** (dimension=2, variance=1, length scale=10) to generate a Stationary Random Field (SRF). This ensures the synthetic data mimics the spatial continuity and "smoothness" often found in real-world environmental phenomena.
 -   **Structure**: If there is a grid, points are generated on a regular Cartesian grid using a meshgrid of and coordinates. If it's not the case, points are sampled using a\*Uniform Random Distribution across the spatial domain to simulate irregular sampling.
--   **Size**: Ranging from 10,000 points for "Small" Datasets to 1,000,000 points for "Large" datasets
+-   **Size**: Ranging from 5,000 points for "Small" Datasets, 100,000 points for "Large" datasets, 1,000,000 points for "Very Large" datasets and 10,000,000 points for "Extrem Large"
 -   **Consistency**: A fixed seed (20170519) is applied to both the random field generation and the coordinate sampling to ensure the experiments are fully reproducible across different benchmark runs.
+
+**Noisy**: For the noisy datasets, they are build using gaussian noisy, with a variance equal to 0,5 for the low noise, 1 for medium noise and two for high noise.
 
 For the **real datasets**, we utilize high-quality topographic data provided by the **IGN (Institut National de l'Information Géographique et Forestière)**, the French national mapping agency.
 
 -   **BD ALTI**: This dataset represents the "unstructured" real-world scenario. The points are derived from various sources (photogrammetry, digitization, etc.) where the spatial distribution of samples is irregular. So we can use this dataset as our no grid, large, real dataset.
 -   **RGE ALTI**: It is the highest resolution elevation model available nationally. It is provided as a 5-meter regular grid. The full national dataset contains over 22 billion points. So we can use this dataset as our grid, large, real dataset.
 
+- **California Housing**: A standard machine learning benchmark derived from the 1990 U.S. Census. We include this dataset to test model robustness in a "medium-sized, noisy, real-world" scenario, contrasting with the relatively smooth topographic surfaces of the IGN data.
+
 For the Small real-world datasets, we use a subset of the French territory by filtering for Department 48 (Lozère). This department was chosen because its diverse topography—ranging from deep canyons and plateaus to mountainous terrain—offers a representative sample of various geographic challenges for spatial interpolation.
 
 ## Dataset Reference Table
 
-| Dataset Name | Origin | Size Category | Structure | Approx. Row Count |
-|------------|------------|------------|------------|------------|
-| **bdalti** | Real | Large | No Grid | \~7,000,000 |
-| **bdalti_48** | Real | Small | No Grid | \~40,000 | 
-| **rgealti** | Real | Large | Grid | \~22,000,000,000 |
-| **rgealti_48** | Real | Small | Grid | \~1,500,000 |
-| **S-G-Sm** | Synthetic | Small | Grid | 10,000 |
-| **S-G-Lg** | Synthetic | Large | Grid | 1,000,000 |
-| **S-NG-Sm** | Synthetic | Small | No Grid | 10,000 |
-| **S-NG-Lg** | Synthetic | Large | No Grid | 1,000,000 |
+| Dataset Name | Origin | Size Category | Structure | Notes / Noise Level | Approx. Row Count |
+| --- | --- | --- | --- | --- | --- |
+| **bdalti** | Real | Large | No Grid | Clean | ~7,000,000 |
+| **bdalti_48** | Real | Small | No Grid | Clean | ~40,000 |
+| **rgealti** | Real | Large | Grid | Clean | ~22,000,000,000 |
+| **rgealti_48** | Real | Small | Grid | Clean | ~1,500,000 |
+| **S-G-Sm** | Synthetic | Small | Grid | Clean | 5,000 |
+| **S-G-Lg** | Synthetic | Large | Grid | Clean | 100,000 |
+| **S-NG-Sm** | Synthetic | Small | No Grid | Clean | 5,000 |
+| **S-NG-Lg** | Synthetic | Large | No Grid | Clean | 100,000 |
+| **S-NG-VLg** | Synthetic | Very Large | No Grid | Clean | 1,000,000 |
+| **S-NG-ELg** | Synthetic | Extremely Large | No Grid | Clean | 10,000,000 |
+| **S-NG-Lg-N1** | Synthetic | Large | No Grid | Low Noise | 100,000 |
+| **S-NG-Lg-N2** | Synthetic | Large | No Grid | Med Noise | 100,000 |
+| **S-NG-Lg-N3** | Synthetic | Large | No Grid | High Noise | 100,000 |
+| **cal_housing** | Real | Medium | No Grid | Noisy (Real World) | ~20,000 |
 
 
 ## Performance Metrics
