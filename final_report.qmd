@@ -86,11 +86,11 @@ Overview of the benchmarking framework and experimental pipeline.
 
 |                                                    |                                    |
 |----------------------------------------------------|------------------------------------|
-| A\) Generalized Additive Models - GAM ()           | F\) Nearest Neighbor Interpolation |
-| B\) GeoSpatial Random Forest (Geerts et al. 2024a) | G\) Oblique Random Forest          |
+| A\) Generalized Additive Models - GAM              | F\) Nearest Neighbor Interpolation |
+| B\) GeoSpatial Random Forest                       | G\) Oblique Random Forest          |
 | C\) Gradient Boosting                              | H\) Ordinary Kriging               |
-| D\) Inverse Distance Weighting - IDW ()            | I\) Random Forest                  |
-| E\) MI-GBT (Geerts et al. 2024b)                   | J\) XGBoost                        |
+| D\) Inverse Distance Weighting - IDW               | I\) Random Forest                  |
+| E\) MI-GBT                                         | J\) XGBoost                        |
 
 ## Comparison of Spatial Interpolation Methods
 
@@ -116,7 +116,7 @@ For this reason, deterministic methods provide a useful baseline for spatial int
 
 #### Geostatistical Method
 
-*Kriging** represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation, determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
+**Kriging** represents the geostatistical approach to spatial interpolation. Unlike deterministic methods, it treats spatial data as realizations of an underlying stochastic process. This probabilistic framework allows the method to explicitly model spatial autocorrelation, determine prediction weights by minimizing the variance of the prediction error, and provide uncertainty estimates associated with the predictions.
 
 At the core of the approach lies the variogram, which describes how similarity between observations changes with distance. Rather than simply assuming that nearby points are more influential, as deterministic methods do, Kriging asks how strong this influence is and how it evolves across spatial scales. Based on this information, optimal prediction weights are obtained by solving a system of linear equations that accounts for both inter point distances and the overall spatial configuration.
 
@@ -226,13 +226,7 @@ From a geometric perspective, coordinate rotation can be interpreted as a change
 
 ## Datasets
 
-There will be plenty datasets to cover combinations of:
-
--   **Real or Synthetic**
--   **Large or Small**
--   **Grid or No Grid**
-
-It will also be about, very large, extremly large datasets and noisy datasets. 
+There will be plenty datasets to cover combinations of, **Real or Synthetic**, **Large or Small** and **Grid or No Grid**. It will also be about, very large, extremly large datasets and noisy datasets. 
 
 For the **synthetic ones**, they are built following the idea that we need some data spatially correlated, be able to respect our different criteria:
 
@@ -241,7 +235,7 @@ For the **synthetic ones**, they are built following the idea that we need some 
 -   **Size**: Ranging from 5,000 points for "Small" Datasets, 100,000 points for "Large" datasets, 1,000,000 points for "Very Large" datasets and 10,000,000 points for "Extrem Large"
 -   **Consistency**: A fixed seed (20170519) is applied to both the random field generation and the coordinate sampling to ensure the experiments are fully reproducible across different benchmark runs.
 
-**Noisy**: For the noisy datasets, they are build using gaussian noisy, with a variance equal to 0,5 for the low noise, 1 for medium noise and two for high noise.
+**Noisy**: For the noisy datasets, they are build using gaussian noise, with a variance equal to 0,5 for the low noise, 1 for medium noise and two for high noise.
 
 For the **real datasets**, we utilize high quality topographic data provided by the **IGN (Institut National de l'Information Géographique et Forestière)**, the French national mapping agency.
 
@@ -254,22 +248,22 @@ For the Small real world datasets, we use a subset of the French territory by fi
 
 ## Dataset Reference Table
 
-| Dataset Name | Origin | Size Category | Structure | Notes / Noise Level | Approx. Row Count |
+| Dataset Name | Origin | Size Category | Structure | Noise | Row Count |
 | --- | --- | --- | --- | --- | --- |
-| **bdalti** | Real | Large | No Grid | Clean | ~7,000,000 |
-| **bdalti_48** | Real | Small | No Grid | Clean | ~40,000 |
-| **rgealti** | Real | Large | Grid | Clean | ~22,000,000,000 |
-| **rgealti_48** | Real | Small | Grid | Clean | ~1,500,000 |
-| **S-G-Sm** | Synthetic | Small | Grid | Clean | 5,000 |
-| **S-G-Lg** | Synthetic | Large | Grid | Clean | 100,000 |
-| **S-NG-Sm** | Synthetic | Small | No Grid | Clean | 5,000 |
-| **S-NG-Lg** | Synthetic | Large | No Grid | Clean | 100,000 |
-| **S-NG-VLg** | Synthetic | Very Large | No Grid | Clean | 1,000,000 |
-| **S-NG-ELg** | Synthetic | Extremely Large | No Grid | Clean | 10,000,000 |
+| **bdalti** | Real | Large | No Grid | Smooth | ~7,000,000 |
+| **bdalti_48** | Real | Small | No Grid | Smooth | ~40,000 |
+| **rgealti** | Real | Large | Grid | Smooth | ~22,000,000,000 |
+| **rgealti_48** | Real | Small | Grid | Smooth | ~1,500,000 |
+| **S-G-Sm** | Synthetic | Small | Grid | Smooth | 5,000 |
+| **S-G-Lg** | Synthetic | Large | Grid | Smooth | 100,000 |
+| **S-NG-Sm** | Synthetic | Small | No Grid | Smooth | 5,000 |
+| **S-NG-Lg** | Synthetic | Large | No Grid | Smooth | 100,000 |
+| **S-NG-VLg** | Synthetic | Very Large | No Grid | Smooth | 1,000,000 |
+| **S-NG-ELg** | Synthetic | Extremely Large | No Grid | Smooth | 10,000,000 |
 | **S-NG-Lg-N1** | Synthetic | Large | No Grid | Low Noise | 100,000 |
 | **S-NG-Lg-N2** | Synthetic | Large | No Grid | Med Noise | 100,000 |
 | **S-NG-Lg-N3** | Synthetic | Large | No Grid | High Noise | 100,000 |
-| **cal_housing** | Real | Medium | No Grid | Noisy (Real World) | ~20,000 |
+| **cal_housing** | Real | Medium | No Grid | Noisy | ~20,000 |
 
 
 ## Performance Metrics
@@ -395,9 +389,7 @@ def get_model_color(model):
 
 ## Small Dataset Screening: Computational Efficiency vs Accuracy
 
-As mentioned previously, we begin our analysis by running all candidate algorithms on Small datasets. This step allows us to evaluate the tradeoff between **Training Cost (Time)** and **Predictive Accuracy (RMSE)** before scaling up.
-
-The figure below plots the Training Time (x-axis, log scale) against the RMSE (y-axis). The ideal algorithm would be located in the **bottom-left corner** (fast and accurate).
+As mentioned previously, we begin our analysis by running all algorithms on small datasets. This step allows us to evaluate the tradeoff between **Training Cost** and **Predictive Accuracy** before scaling up.
 
 ```{python}
 #| echo: false
@@ -437,12 +429,12 @@ def plot_small_datasets_landscape():
 
     df = pd.DataFrame(plot_data)
     
-    fig, ax = plt.subplots(figsize=(10, 7))
+    fig, ax = plt.subplots(figsize=(8, 4))
     
     for _, row in df.iterrows():
         ax.scatter(row['Time'], row['RMSE'], 
                    c=row['Color'], marker=row['Shape'], 
-                   s=100, alpha=0.7, edgecolors='black', linewidth=0.5)
+                   s=75, alpha=0.7, edgecolors='black', linewidth=0.5)
 
     ax.set_xscale('log')
     ax.set_xlabel('Training Time (seconds) - Log Scale')
@@ -468,21 +460,20 @@ def plot_small_datasets_landscape():
     # We use gray markers to indicate "Shape only"
     legend_elements_shape = [
         Line2D([0], [0], marker=ds_shapes[ds], color='w', markerfacecolor='gray', 
-               markeredgecolor='black', markersize=10, label=dataset_names.get(ds, ds))
+               markeredgecolor='black', markersize=8, label=dataset_names.get(ds, ds))
         for ds in small_ds
     ]
     
     # Add the second legend to the bottom right
     ax.legend(handles=legend_elements_shape, title="Dataset Source", loc='lower right')
-    
+
     plt.tight_layout()
     plt.show()
 
 plot_small_datasets_landscape()
-
 ```
 
-The plot reveals different computational profiles for the families of algorithms. Using the results obtained, a selection of models is made for evaluation on larger datasets. This is a crucial step that avoids wasting computational resources on models that are not competitive in terms of training time.
+The figure below plots the Training Time (x-axis, log scale) against the RMSE (y-axis). The ideal algorithm would be located in the **bottom-left corner** (fast and accurate). It reveals different computational profiles for the families of algorithms. Using the results obtained, a selection of models is made for evaluation on larger datasets. This is a crucial step that avoids wasting computational resources on models that are not competitive in terms of training time.
 
 The GAM, GeoRF exhibit extreme training times even on modest sample sizes. Extrapolating these computational demands to datasets an order of magnitude larger suggests prohibitive resource requirements that would render them impractical for operational use. For the case of Kriging, its complexity leads to training times that grow rapidly with sample size, making it infeasible for larger datasets. These methods are therefore excluded from further analysis, as their computational inefficiency outweighs any potential accuracy benefits they may offer.
 
@@ -564,11 +555,7 @@ def display_scalability_table_colored():
 display_scalability_table_colored()
 ```
 
-**Scaling Behavior Analysis:**
-
-The analysis on larger datasets shows different behaviour for the considered algortihms. **Deterministic methods** exhibit one of the highest augmentation factor both for the KNN and for IDW, however this not implies a bad scalability because it still remains the fastest one. Also the **Tree ensemble methods** are able to scale well, with a reasonable augmentation factors. The XGBoost based model shows a particular pattern, infact, its training time for the large datasets is lower than one of the small datasets.
-
-Adesso andiamo a comparare i risultati per dataset piu grandi (grandissimi)
+The analysis on larger datasets shows different behaviour for the considered algortihms. **Deterministic methods** exhibit one of the highest augmentation factor both for the KNN and for IDW, however this not implies a bad scalability because it still remains the fastest one. Also the **Tree ensemble methods** are able to scale well, with a reasonable augmentation factors. The XGBoost based model shows a particular pattern, infact, its training time for the large datasets is lower than one of the small datasets.Next step is to move from large dataset of 100,000 rows to very large 1O times larger and extremely large 100 times larger than the large one.
 
 ```{python}
 #| echo: false
@@ -634,6 +621,8 @@ def display_stress_test_table_colored():
 
 display_stress_test_table_colored()
 ```
+
+This table highlights the dramatic increase in training time as dataset size grows, especially for complex models like MiGBT-CR, whose time explodes to over an hour for the largest dataset. Simple models (IDW, KNN) scale much more gracefully, while tree-based methods (RF, XGB) show moderate scaling. The CR variants, which include additional computational steps, consistently require more time across all dataset sizes. We can conclude that ensemblist methods seems to be more adapted to scale large dataset but determinitic methods stays quicker on our example. Also all ensemblist methods are not equivalent, in fact Mi-GBT is 18 times slower than gradiant boosting, but it's important to keep in the memory that this part is hard to interprate because of the wrappers that are build allowing us to maintain the code of each algorithm.
 
 ### Robustness to Noise
 
