@@ -1,0 +1,29 @@
+---
+title: "BENCHMARK SPATIAL INTERPOLATION"
+author: "Andrea Bianco, Matteo Mancini, Rodrigue Mellot"
+format:
+  revealjs:
+    theme: simple
+    css: custom.css
+    slide-number: true
+    transition: fade
+---
+
+## Introduzione
+
+SIAMO CAMPIONI DI BRUZ
+
+## Dati
+
+-   Punto 1
+-   Punto 2
+
+## Risultati
+
+### Modello A
+
+...
+
+### Modello B
+
+...

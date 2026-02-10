@@ -10,10 +10,15 @@ chmod +x benchmark.sh
 
 You can have a look at the report in s3 ! 
 
-
 If you want to avoid to run the code which is long you can just avoid that by running  : 
 cd benchmark_spatial_interpolation/ 
 chmod +x init.sh
 ./init.sh
 chmod +x report.sh
 ./report.sh
+
+If you want to render the presentation :
+cd benchmark_spatial_interpolation/
+quarto render presentation.qmd
+or
+quarto preview presentation.qmd
