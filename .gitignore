@@ -23,3 +23,5 @@ results/
 /final_report_files
 /report_files
 **/*.pdf
+/presentation_files
+/presentation.html
