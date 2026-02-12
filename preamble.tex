@@ -1,0 +1,22 @@
+% --- nicer typography & spacing
+\usepackage{lmodern}
+\usepackage{microtype}
+\setbeamersize{text margin left=10mm, text margin right=10mm}
+
+% --- remove the annoying navigation symbols already disabled by navigation: empty
+\setbeamertemplate{navigation symbols}{}
+
+% --- cleaner title + frame title
+\setbeamerfont{title}{size=\LARGE,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
+
+% --- footer: authors left, title center, slide numbers right
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.6ex,dp=1.2ex,left]{author in head/foot}\hspace*{2mm}\insertshortauthor\end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.48\paperwidth,ht=2.6ex,dp=1.2ex,center]{title in head/foot}\insertshorttitle\end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.18\paperwidth,ht=2.6ex,dp=1.2ex,right]{date in head/foot}\insertframenumber/\inserttotalframenumber\hspace*{2mm}\end{beamercolorbox}%
+  }%
+}
