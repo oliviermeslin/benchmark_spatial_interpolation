@@ -19,4 +19,4 @@ chmod +x report.sh
 
 If you want to render the presentation :
 cd benchmark_spatial_interpolation/
-quarto preview presentation.qmd
+quarto render presentation_pdf.qmd

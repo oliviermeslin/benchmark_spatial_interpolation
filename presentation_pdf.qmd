@@ -1,0 +1,41 @@
+---
+title: "BENCHMARK SPATIAL INTERPOLATION"
+subtitle: "Spatial interpolation methods on synthetic + real data"
+author: "Andrea Bianco · Matteo Mancini · Rodrigue Mellot"
+format:
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: seahorse
+    fonttheme: professionalfonts
+    innertheme: rounded
+    outertheme: miniframes
+    navigation: empty
+    incremental: true
+    slide-level: 2
+    fontsize: 11pt
+    includes-in-header: preamble.tex
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+## Introduzione
+
+SIAMO CAMPIONI DI BRUZ
+
+## Dati
+
+- Punto 1
+- Punto 2
+
+## Risultati
+
+### Modello A
+
+...
+
+### Modello B
+
+...
