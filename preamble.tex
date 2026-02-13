@@ -1,22 +1,96 @@
-% --- nicer typography & spacing
-\usepackage{lmodern}
-\usepackage{microtype}
-\setbeamersize{text margin left=10mm, text margin right=10mm}
+% ─── Packages ───────────────────────────────────────────────────────────────
+\usepackage{amsmath, amssymb, bm}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+% fontawesome5 removed – using text symbols instead
+\usepackage{tcolorbox}
+\tcbuselibrary{most}
+\usepackage{array}
+\usepackage{colortbl}
+\usepackage{tabularx}
 
-% --- remove the annoying navigation symbols already disabled by navigation: empty
+% ─── Custom colours ──────────────────────────────────────────────────────────
+\definecolor{ensaiblue}{RGB}{0,62,126}
+\definecolor{ensailight}{RGB}{173,210,240}
+\definecolor{detcol}{RGB}{41,128,185}    % deterministic – blue
+\definecolor{geocol}{RGB}{39,174,96}     % geostatistical – green
+\definecolor{mlcol}{RGB}{192,57,43}      % machine learning – red
+\definecolor{accentgold}{RGB}{212,175,55}
+\definecolor{lightgray}{RGB}{245,245,245}
+\definecolor{darkgray}{RGB}{80,80,80}
+
+% ─── Seahorse override: keep palette but tweak title block ───────────────────
+\setbeamercolor{frametitle}{bg=ensaiblue, fg=white}
+\setbeamercolor{title}{fg=white}
+\setbeamercolor{author}{fg=ensailight}
+\setbeamercolor{date}{fg=ensailight}
+\setbeamercolor{block title}{bg=ensaiblue!80, fg=white}
+\setbeamercolor{block body}{bg=ensaiblue!8}
+\setbeamercolor{alerted text}{fg=accentgold}
+\setbeamercolor{item}{fg=ensaiblue}
+\setbeamercolor{subitem}{fg=darkgray}
+
+% ─── Fonts ───────────────────────────────────────────────────────────────────
+\setbeamerfont{frametitle}{size=\large, series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries}
+\setbeamerfont{title}{size=\LARGE, series=\bfseries}
+
+% ─── Remove nav symbols ──────────────────────────────────────────────────────
 \setbeamertemplate{navigation symbols}{}
 
-% --- cleaner title + frame title
-\setbeamerfont{title}{size=\LARGE,series=\bfseries}
-\setbeamerfont{subtitle}{size=\large}
-\setbeamerfont{frametitle}{size=\Large,series=\bfseries}
-
-% --- footer: authors left, title center, slide numbers right
-\setbeamertemplate{footline}{
+% ─── Progress footline ───────────────────────────────────────────────────────
+\setbeamertemplate{footline}{%
   \leavevmode%
   \hbox{%
-    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.6ex,dp=1.2ex,left]{author in head/foot}\hspace*{2mm}\insertshortauthor\end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.48\paperwidth,ht=2.6ex,dp=1.2ex,center]{title in head/foot}\insertshorttitle\end{beamercolorbox}%
-    \begin{beamercolorbox}[wd=.18\paperwidth,ht=2.6ex,dp=1.2ex,right]{date in head/foot}\insertframenumber/\inserttotalframenumber\hspace*{2mm}\end{beamercolorbox}%
-  }%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,left]{author in head/foot}%
+      \hspace*{1em}\insertshortauthor
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.34\paperwidth,ht=2.25ex,dp=1ex,center]{title in head/foot}%
+      \insertshorttitle
+    \end{beamercolorbox}%
+    \begin{beamercolorbox}[wd=.33\paperwidth,ht=2.25ex,dp=1ex,right]{date in head/foot}%
+      \insertframenumber{} / \inserttotalframenumber\hspace*{1em}
+    \end{beamercolorbox}}%
 }
+
+% ─── Section slide ───────────────────────────────────────────────────────────
+\AtBeginSection[]{
+  \begin{frame}
+    \vfill
+    \centering
+    \begin{tcolorbox}[
+      colback=ensaiblue, colframe=ensaiblue,
+      width=0.75\textwidth,
+      arc=6pt, boxrule=0pt,
+      halign=center, valign=center,
+      fontupper=\Large\bfseries\color{white}
+    ]
+      \insertsectionhead
+    \end{tcolorbox}
+    \vfill
+  \end{frame}
+}
+
+% ─── Coloured family badges ───────────────────────────────────────────────────
+\newcommand{\detbadge}{\colorbox{detcol!20}{\textcolor{detcol}{\textbf{Deterministic}}}}
+\newcommand{\geobadge}{\colorbox{geocol!20}{\textcolor{geocol}{\textbf{Geostatistical}}}}
+\newcommand{\mlbadge}{\colorbox{mlcol!20}{\textcolor{mlcol}{\textbf{Machine Learning}}}}
+
+% ─── Coloured formula box ─────────────────────────────────────────────────────
+\newcommand{\formulabox}[2]{%
+  \begin{tcolorbox}[
+    colback=#1!8, colframe=#1!60,
+    arc=4pt, boxrule=0.8pt,
+    left=4pt, right=4pt, top=3pt, bottom=3pt
+  ]
+  #2
+  \end{tcolorbox}
+}
+
+% ─── Tighter itemize ─────────────────────────────────────────────────────────
+\setlength{\itemsep}{3pt}
+\setlength{\parskip}{2pt}
