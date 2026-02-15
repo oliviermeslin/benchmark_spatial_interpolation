@@ -1115,34 +1115,23 @@ def get_model_color(model):
 ```{python}
 #| echo: false
 #| fig-align: center
+
 from matplotlib.lines import Line2D
+import matplotlib.ticker as ticker
 
 def plot_small_datasets_landscape():
-    """
-    Plot: Training Time (X) vs RMSE (Y) for Small Datasets.
-    Color: Algorithm
-    Shape: Dataset
-    """
     small_ds = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
-
-    ds_shapes = {
-        'rgealti_48': 'o', 'bdalti_48': 's',
-        'S-G-Sm': '^', 'S-NG-Sm': 'D'
-    }
+    ds_shapes = {'rgealti_48': 'o', 'bdalti_48': 's', 'S-G-Sm': '^', 'S-NG-Sm': 'D'}
 
     plot_data = []
-
     for m_key in model_names.keys():
         for ds in small_ds:
             res = next((r for r in results if r['model'] == m_key and r['dataset'] == ds), None)
             if res:
                 val_rmse = res.get('rmse', np.sqrt(res.get('mse', 0)))
-
                 plot_data.append({
-                    'Model': model_names[m_key],
                     'ModelKey': m_key,
-                    'Dataset': dataset_names.get(ds, ds), # Safe get
-                    'DatasetKey': ds,
+                    'Dataset': dataset_names.get(ds, ds),
                     'Time': res.get('training_time', 0.001),
                     'RMSE': val_rmse,
                     'Color': get_model_color(m_key),
@@ -1151,45 +1140,51 @@ def plot_small_datasets_landscape():
 
     df = pd.DataFrame(plot_data)
 
-    fig, ax = plt.subplots(figsize=(8, 4))
+    # On utilise un format plus large (12) et moins haut (4.5) pour le 16:9 de Beamer
+    fig, ax = plt.subplots(figsize=(12, 4.5))
 
     for _, row in df.iterrows():
         ax.scatter(row['Time'], row['RMSE'],
                    c=row['Color'], marker=row['Shape'],
-                   s=75, alpha=0.7, edgecolors='black', linewidth=0.5)
+                   s=80, alpha=0.7, edgecolors='black', linewidth=0.6, zorder=3)
 
     ax.set_xscale('log')
-    ax.set_xlabel('Training Time (seconds) - Log Scale')
-    ax.set_ylabel('RMSE (Lower is Better)')
-    ax.set_title('Small Datasets: Efficiency vs. Accuracy Trade-off')
-    ax.grid(True, linestyle='--', alpha=0.3)
 
-    # --- LEGEND 1: Colors (Algorithms) ---
+    # Formatage propre de l'axe X (évite les 10^-3, etc.)
+    ax.xaxis.set_major_formatter(ticker.ScalarFormatter())
+    ax.set_xlabel('Training Time (seconds) - Log Scale', fontsize=10, fontweight='bold')
+    ax.set_ylabel('RMSE', fontsize=10, fontweight='bold')
+    ax.set_title('Efficiency vs. Accuracy Trade-off (Small Datasets)', fontweight='bold', pad=15)
+
+    ax.grid(True, which="both", linestyle='--', alpha=0.2, zorder=0)
+
+    # --- LEGENDES (Positionnées à l'extérieur pour libérer l'espace) ---
     legend_elements_color = [
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_deterministic, markersize=10, label='Deterministic'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_tree, markersize=10, label='Tree Ensemble'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_advanced_tree, markersize=10, label='Advanced Tree'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_geostat, markersize=10, label='Geostatistical'),
-        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_gam, markersize=10, label='GAM'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_deterministic, markersize=9, label='Deterministic'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_tree, markersize=9, label='Tree Ensemble'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_advanced_tree, markersize=9, label='Advanced Tree'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_geostat, markersize=9, label='Geostatistical'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_gam, markersize=9, label='GAM'),
     ]
-    # Save this legend to a variable
-    first_legend = ax.legend(handles=legend_elements_color, title="Algorithm Family", loc='upper left')
 
-    # Crucial Step: Manually add the first legend back to the plot layout
-    ax.add_artist(first_legend)
+    leg1 = ax.legend(handles=legend_elements_color, title="Algorithm Family",
+                     bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0., fontsize=9)
+    ax.add_artist(leg1)
 
-    # --- LEGEND 2: Shapes (Datasets) ---
-    # We use gray markers to indicate "Shape only"
     legend_elements_shape = [
         Line2D([0], [0], marker=ds_shapes[ds], color='w', markerfacecolor='gray',
-               markeredgecolor='black', markersize=8, label=dataset_names.get(ds, ds))
+               markeredgecolor='black', markersize=7, label=dataset_names.get(ds, ds))
         for ds in small_ds
     ]
 
-    # Add the second legend to the bottom right
-    ax.legend(handles=legend_elements_shape, title="Dataset Source", loc='lower right')
+    ax.legend(handles=legend_elements_shape, title="Dataset Source",
+              bbox_to_anchor=(1.02, 0.35), loc='upper left', borderaxespad=0., fontsize=9)
 
-    plt.tight_layout()
+    # CRUCIAL : On force la marge à droite pour laisser de la place aux légendes
+    # et en bas pour que l'axe X ne soit pas coupé
+    plt.subplots_adjust(right=0.72, bottom=0.22, top=0.88)
+
+    sns.despine()
     plt.show()
 
 plot_small_datasets_landscape()
@@ -1203,7 +1198,7 @@ plot_small_datasets_landscape()
 #| fig-align: center
 
 # ==========================================
-# PLOT B: Average Large Time / Average Small Time
+# Average Large Time / Average Small Time
 # ==========================================
 small_datasets = ['S-G-Sm', 'S-NG-Sm', 'rgealti_48', 'bdalti_48']
 large_datasets = ['S-G-Lg', 'S-NG-Lg', 'rgealti', 'bdalti']
@@ -1247,7 +1242,7 @@ if not df_small.empty and not df_large.empty:
 #| fig-align: center
 
 # ==========================================
-# PLOT A: Scaling Wall (Log Scale)
+# Scaling Wall (Log Scale)
 # ==========================================
 target_datasets = ['S-NG-Lg', 'S-NG-VLg', 'S-NG-ELg']
 subset = df[df['dataset'].isin(target_datasets)].copy()
@@ -1293,7 +1288,7 @@ if not subset.empty:
 #| fig-align: center
 
 # ==========================================
-# PLOT D: Bump Chart (Constant Distance)
+# Bump Chart (Constant Distance)
 # ==========================================
 noise_map = {
     'S-NG-Lg': 'Clean\n(σ=0)', 'S-NG-Lg-N1': 'Low Noise\n(σ=0.5)',
@@ -1370,9 +1365,9 @@ if not subset.empty:
 #| fig-align: center
 
 # ==========================================
-# PLOT F: 3 Radar Charts on ONE Slide
+# Radar Charts
 # ==========================================
-from matplotlib.lines import Line2D  # <--- IMPORT ADDED HERE
+from matplotlib.lines import Line2D
 from math import pi
 import matplotlib.pyplot as plt
 
@@ -1454,11 +1449,140 @@ plt.show()
 ```
 
 
-## Take Away on CR
+## Coordinate Rotation: Key Takeaways
 
+\begin{columns}[T]
 
+  \begin{column}{0.48\textwidth}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, title=\textbf{Performance \& Context}, equal height group=A]
+    {\footnotesize
+    \textbf{Accuracy vs. Speed}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Higher Accuracy} (Consistent)
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Slower Training} (Computational overhead)
+    \end{itemize}
 
-## Conclusion
+    \vspace{0.2cm}
+
+    \textbf{Optimal Use Case}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Structured Grids} (e.g., RGE ALTI)
+      \item[\textcolor{stratTeal}{$\bullet$}] Captures directional dependencies
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, title=\textbf{Scalability \& Verdict}, equal height group=A]
+    {\footnotesize
+    \textbf{Inherited Scalability}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] Linked to \textbf{base algorithm}
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{XGBoost}: Handles expansion well
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Mi-GBT}: Exponential slowdown
+    \end{itemize}
+
+    \vspace{0.2cm}
+
+    \textbf{Final Verdict}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{"High-Precision Mode"}
+      \item[\textcolor{stratTeal}{$\bullet$}] Strategic choice vs. Default setting
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+## Conclusion: Selection Matrix
+
+\begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt]
+\centering
+\resizebox{0.95\textwidth}{!}{%
+\begin{tabular}{l|c|c|c|c}
+\textbf{Data Size} & \textbf{No Grid \& Noise} & \textbf{Grid Data} & \textbf{Low Noise} & \textbf{High Noise} \\ \hline
+\textbf{Small} & \textcolor{blue}{KNN / IDW} & \textcolor{red}{RF-CR / XGB-CR} & \textcolor{blue}{KNN} / \textcolor{orange}{RF} & \textcolor{orange}{RF / XGB} \\
+\textbf{Large} & \textcolor{blue}{KNN / IDW} & \textcolor{red}{RF-CR / XGB-CR} & \textcolor{orange}{RF / XGB} & \textcolor{orange}{RF / XGB} \\
+\textbf{Very Large} & \textcolor{blue}{KNN / IDW} & \textcolor{red}{RF-CR / XGB-CR} & \textcolor{orange}{XGB / RF} & \textcolor{orange}{XGB / RF} \\
+\textbf{Extrem.} & \textcolor{blue}{KNN / IDW} & \textcolor{orange}{XGB} & \textcolor{orange}{XGB / RF} & \textcolor{orange}{XGB} \\
+\end{tabular}%
+}
+\end{tcolorbox}
+
+\vspace{0.2cm}
+
+\begin{columns}[T]
+  \begin{column}{0.32\textwidth}
+    \begin{tcolorbox}[colframe=blue, colback=white, arc=4pt, boxrule=1pt, title=\textbf{\footnotesize Deterministic}]
+    {\scriptsize
+    \begin{itemize}
+        \item[\textcolor{blue}{$\bullet$}] Small Data
+        \item[\textcolor{blue}{$\bullet$}] Noise-free
+        \item[\textcolor{blue}{$\bullet$}] Local Interp.
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.32\textwidth}
+    \begin{tcolorbox}[colframe=orange, colback=white, arc=4pt, boxrule=1pt, title=\textbf{\footnotesize Ensemble}]
+    {\scriptsize
+    \begin{itemize}
+        \item[\textcolor{orange}{$\bullet$}] Complex patterns
+        \item[\textcolor{orange}{$\bullet$}] Non-linear
+        \item[\textcolor{orange}{$\bullet$}] Stochastic/Noisy
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.32\textwidth}
+    \begin{tcolorbox}[colframe=red, colback=white, arc=4pt, boxrule=1pt, title=\textbf{\footnotesize CR Variants}]
+    {\scriptsize
+    \begin{itemize}
+        \item[\textcolor{red}{$\bullet$}] Structured Grids
+        \item[\textcolor{red}{$\bullet$}] Max Precision
+        \item[\textcolor{red}{$\bullet$}] Spatial Orientation
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+\end{columns}
+
+## Going Further & Perspectives
+
+\begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, title=\textbf{Wrapper Optimization}]
+{\footnotesize
+\begin{itemize}
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Split-Logic Analysis}: Impact of rotation on tree splits
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Feature Redundancy}: Minimize feature dilution
+\end{itemize}
+}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+\begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, title=\textbf{Tuning \& Early Stopping}]
+{\footnotesize
+\begin{itemize}
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Noise Protection}: Early stopping for XGBoost/MiGBT
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Adaptive Rotation}: Optimize $k$ via Cross-Validation
+\end{itemize}
+}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+\begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, title=\textbf{Hybrid Architectures}]
+{\footnotesize
+\begin{itemize}
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Residual Kriging (RK)}: RF Trend + Kriging Residuals
+    \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Best of both worlds}: Scalability + Statistical Rigor
+\end{itemize}
+}
+\end{tcolorbox}
 
 ## Thank You
 
