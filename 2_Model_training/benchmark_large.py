@@ -1,7 +1,7 @@
 """
-benchmark_large.py - CORRECTED & UPDATED
-Target: Large Datasets (~100,000 points) & Noisy Datasets
-Updates: Uses the 3 new variable-noise synthetic datasets (N1, N2, N3).
+benchmark_large.py
+Target: Large & Noisy Datasets
+Usage : uv run benchmark_large.py
 """
 import json
 import time
@@ -135,29 +135,29 @@ def sample_parameters(param_space: dict) -> dict:
 def load_dataset(dataset_config: dict):
     ldf = get_df_from_s3(dataset_config["path"])
     target_n = dataset_config.get("target_n", 100_000)
-    
+
     # Normalize column names
-    if "val" in ldf.collect_schema().names(): 
+    if "val" in ldf.collect_schema().names():
         ldf = ldf.rename({"val": "value"})
-    
+
     # Special handling for huge RGEALTI dataset to avoid memory spikes
-    if "rgealti" in dataset_config["name"]: 
+    if "rgealti" in dataset_config["name"]:
         ldf = ldf.slice(0, 1_000_000)
 
     # Basic cleaning
     ldf = ldf.filter((pl.col("value").is_not_null()) & (pl.col("value") > 0))
     df = ldf.select(["x", "y", "value"]).collect(engine="streaming")
-    
+
     # Transformations
     if dataset_config.get("transform") == "log":
         df = df.with_columns(pl.col("value").log())
-        
+
     df = df.filter(pl.col("value").is_finite())
-    
+
     # Sampling
     if len(df) >= target_n:
         df = df.sample(n=target_n, seed=RANDOM_STATE)
-    
+
     X = df.select(["x", "y"]).to_pandas()
     y = df.select("value").to_numpy().ravel().astype(float)
     return X, y
@@ -172,7 +172,7 @@ def run_single_fit(model_class, params, number_axis, X_train_pl, y_train, X_test
     pipeline.fit(X_train_pl, y_train)
     time_taken = time.perf_counter() - start
     y_pred = pipeline.predict(X_test_pl)
-    
+
     metrics = {m["name"]: float(m["func"](y_test, y_pred)) for m in METRICS}
     metrics['training_time'] = round(time_taken, 2)
     return metrics
@@ -191,16 +191,16 @@ def run_benchmark():
         for model_config in MODELS:
             model_name = model_config["name"]
             print(f"  > Tuning {model_name}...")
-            
+
             best_score = float('inf')
             best_result = None
 
             for i in range(N_ITER_SEARCH):
                 params = sample_parameters(model_config["param_space"])
-                
+
                 # Store ALL metrics for every fold
-                fold_results = [] 
-                
+                fold_results = []
+
                 for train_idx, test_idx in kf.split(X, y):
                     X_tr, X_te = pl.from_pandas(X.iloc[train_idx]), pl.from_pandas(X.iloc[test_idx])
                     y_tr, y_te = y[train_idx], y[test_idx]
@@ -208,25 +208,25 @@ def run_benchmark():
                         m = run_single_fit(model_config["class"], params, model_config.get("number_axis", 1), X_tr, y_tr, X_te, y_te)
                         fold_results.append(m)
                     except Exception as e:
-                        # print(f"Fold failed: {e}") 
+                        # print(f"Fold failed: {e}")
                         pass
-                
+
                 if fold_results:
                     # Calculate average RMSE to decide if this is the best model
                     avg_rmse = np.mean([res['rmse'] for res in fold_results])
-                    
+
                     if avg_rmse < best_score:
                         best_score = avg_rmse
-                        
+
                         # Calculate averages for ALL metrics (Time, R2, MAE)
                         avg_metrics = {
-                            k: float(np.mean([res[k] for res in fold_results])) 
+                            k: float(np.mean([res[k] for res in fold_results]))
                             for k in fold_results[0].keys()
                         }
-                        
+
                         best_result = {
-                            "model": model_name, 
-                            "dataset": dataset["name"], 
+                            "model": model_name,
+                            "dataset": dataset["name"],
                             "best_params": params,
                             "noisy_flag": dataset.get("noisy", False),
                             **avg_metrics # Unpacks: rmse, r2_score, mae, training_time

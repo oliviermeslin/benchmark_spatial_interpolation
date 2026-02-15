@@ -1,29 +1,1477 @@
 ---
-title: "BENCHMARK SPATIAL INTERPOLATION"
-author: "Andrea Bianco, Matteo Mancini, Rodrigue Mellot"
+title: "Benchmark of Spatial Interpolation Algorithms"
+subtitle: "Ensemble Methods on Spatial Data"
+author: "Andrea Bianco · Matteo Mancini · Rodrigue Mellot"
+institute: "Under the direction of: Olivier Meslin"
+date: "February 2026"
 format:
-  revealjs:
-    theme: simple
-    css: custom.css
-    slide-number: true
-    transition: fade
+  beamer:
+    aspectratio: 169
+    theme: Madrid
+    colortheme: seahorse
+    fonttheme: professionalfonts
+    innertheme: rounded
+    outertheme: default
+    navigation: empty
+    incremental: false
+    slide-level: 2
+    fontsize: 11pt
+    include-in-header: preamble.tex
+    section-titles: false
+jupyter: python3
+execute:
+  echo: false
+  warning: false
+  message: false
 ---
 
-## Introduzione
+# Introduction
 
-SIAMO CAMPIONI DI BRUZ
+## Context and Scientific Motivation
 
-## Dati
+\textbf{Spatial Interpolation:}
+A fundamental technique in environmental sciences to estimate continuous variables at unsampled locations based \textbf{exclusively on spatial coordinates}.
 
--   Punto 1
--   Punto 2
+\vspace{1em}
 
-## Risultati
+\textbf{Evolution of the Paradigm:}
+\begin{itemize}
+  \item \textbf{Traditional:} \geobadge{} and \detbadge{} — foundations in spatial continuity
+  \item \textbf{Modern:} \mlbadge{} — capable of modeling complex, non-linear spatial surfaces
+\end{itemize}
 
-### Modello A
+\vspace{1em}
 
-...
+## Research Question
 
-### Modello B
+\begin{tcolorbox}[colback=ensaiblue!10, colframe=ensaiblue, arc=5pt, boxrule=1pt]
+\centering
+\textbf{Which algorithm is most effective for predicting spatial values\\using coordinates as the only covariates?}
+\end{tcolorbox}
 
-...
+\vspace{0.6em}
+
+The "optimal" model is defined through \textbf{two critical dimensions}:
+
+\begin{enumerate}
+  \item \textbf{Predictive Precision}: Ability to minimize error across diverse spatial geometries
+  \item \textbf{Scalability}: Computational efficiency transitioning from sparse to large-scale, high-density data
+\end{enumerate}
+
+## Core Hypothesis
+
+\begin{tcolorbox}[colback=accentgold!18, colframe=accentgold!85, arc=5pt, boxrule=1.2pt]
+\centering
+\textbf{Coordinate Rotation integrated into ensemble methods\\can effectively replace or outperform traditional deterministic algorithms}
+\end{tcolorbox}
+
+\vspace{0.8em}
+
+\textbf{Motivation:}
+\begin{itemize}
+  \item Standard tree-based models struggle with axis-aligned splits in spatial contexts
+  \item Transforming feature space can unlock significantly higher performance
+  \item Goal: Rigorously test capabilities and limitations of coordinate rotation in spatial modeling
+\end{itemize}
+
+# Methodological Framework
+
+## Algorithms at a Glance
+
+\only<1>{
+\begin{textblock}{0.35}(0.05, 0.25)
+{\small Generalized Additive Models}
+\end{textblock}
+
+\begin{textblock}{0.25}(0.60, 0.18)
+{\small K-Nearest Neighbors}
+\end{textblock}
+
+\begin{textblock}{0.25}(0.38, 0.55)
+{\small GeoSpatial Random Forest}
+\end{textblock}
+
+\begin{textblock}{0.20}(0.72, 0.45)
+{\small Oblique RF}
+\end{textblock}
+
+\begin{textblock}{0.20}(0.10, 0.65)
+{\small Gradient Boosting}
+\end{textblock}
+
+\begin{textblock}{0.20}(0.65, 0.70)
+{\small Ordinary Kriging}
+\end{textblock}
+
+\begin{textblock}{0.25}(0.30, 0.35)
+{\small IDW}
+\end{textblock}
+
+\begin{textblock}{0.20}(0.55, 0.35)
+{\small Random Forest}
+\end{textblock}
+
+\begin{textblock}{0.15}(0.10, 0.45)
+{\small MI-GBT}
+\end{textblock}
+
+\begin{textblock}{0.15}(0.75, 0.28)
+{\small XGBoost}
+\end{textblock}
+}
+
+\only<2>{
+\vspace{0.3cm}
+\begin{columns}[T]
+
+  \begin{column}{0.02\textwidth}
+  \end{column}
+
+  \begin{column}{0.29\textwidth}
+    \centering
+    \begin{tcolorbox}[colframe=detblue, colback=detblue!5, arc=6pt, boxrule=1.5pt, equal height group=A]
+    \centering
+    \textbf{\textcolor{detblue}{Deterministic}}
+    \vspace{0.1cm}
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] IDW
+      \item[\textcolor{detblue}{$\bullet$}] K-Nearest Neighbors
+    \end{itemize}
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.02\textwidth}
+  \end{column}
+
+  \begin{column}{0.29\textwidth}
+    \centering
+    \begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!5, arc=6pt, boxrule=1.5pt, equal height group=A]
+    \centering
+    \textbf{\textcolor{geoviolet}{Geostatistical}}
+    \vspace{0.1cm}
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] Ordinary Kriging
+    \end{itemize}
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.02\textwidth}
+  \end{column}
+
+  \begin{column}{0.34\textwidth}
+    \centering
+    \begin{tcolorbox}[colframe=advRed, colback=advRed!5, arc=6pt, boxrule=1.5pt, equal height group=A]
+    \centering
+    \textbf{\textcolor{advRed}{Machine Learning}}
+    \vspace{0.1cm}
+
+    \textit{\textcolor{treeOrange}{Tree-Based}}
+    \begin{itemize}
+      \item[\textcolor{treeOrange}{$\bullet$}] Random Forest
+      \item[\textcolor{treeOrange}{$\bullet$}] XGBoost
+      \item[\textcolor{treeOrange}{$\bullet$}] MI-GBT
+      \item[\textcolor{advRed}{$\bullet$}] GeoSpatial RF
+      \item[\textcolor{advRed}{$\bullet$}] Oblique RF
+    \end{itemize}
+    \vspace{0.05cm}
+    \textit{\textcolor{gamGreen}{Additive}}
+    \begin{itemize}
+      \item[\textcolor{gamGreen}{$\bullet$}] GAM
+    \end{itemize}
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.02\textwidth}
+  \end{column}
+
+\end{columns}
+}
+
+## Deterministic Methods
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{Inverse Distance Weighting}}
+    \vspace{0.15cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt, equal height group=L]
+    {\small Prediction as a distance-weighted average:}
+    \[
+    \hat{z}(s_0) = \frac{\sum_{i=1}^{n} w_i(s_0)\, z(s_i)}{\sum_{i=1}^{n} w_i(s_0)}
+    \]
+    {\small with weights:}
+    \[
+    w_i(s_0) = \frac{1}{d(s_0, s_i)^p}
+    \]
+    {\footnotesize $d(\cdot,\cdot)$ = Euclidean distance \quad $p > 0$ = decay exponent}
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{K-Nearest Neighbors}}
+    \vspace{0.15cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt, equal height group=L]
+    {\small Prediction as average of the $k$ closest observations:}
+    \[
+    \hat{z}(s_0) = \frac{1}{k} \sum_{i \in \mathcal{N}_k(s_0)} z(s_i)
+    \]
+    {\footnotesize $\mathcal{N}_k(s_0)$ = set of $k$ nearest neighbors of $s_0$}
+    \vspace{0.2cm}
+
+    {\small Optionally using distance-based weights.}
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.2cm}
+\centering
+{\footnotesize \textcolor{gray}{Both methods rely \textbf{purely on geometric principles} — no training phase, no statistical model.}}
+
+## Deterministic $\neq$ Assumption-Free
+
+\begin{tcolorbox}[colframe=gray, colback=gray!8, arc=4pt, boxrule=1pt]
+\centering
+{\small \textit{``Deterministic does not mean assumption-free!''}}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{IDW — the exponent $p$}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] Large $p$ $\Rightarrow$ only nearest points matter
+      \item[\textcolor{detblue}{$\bullet$}] Small $p$ $\Rightarrow$ distant points still contribute
+      \item[\textcolor{detblue}{$\bullet$}] Controls how fast spatial influence \textbf{decays with distance}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{K-NN — the parameter $k$}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] Small $k$ $\Rightarrow$ highly local, noisy predictions
+      \item[\textcolor{detblue}{$\bullet$}] Large $k$ $\Rightarrow$ strong smoothing effect
+      \item[\textcolor{detblue}{$\bullet$}] Controls the \textbf{spatial bandwidth} of the interpolation
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{tcolorbox}[colframe=detblue, colback=detblue!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small Both methods embed \textbf{implicit assumptions about the underlying spatial process through the choice of hyperparameters}}
+\end{tcolorbox}
+
+## Deterministic Methods: Strengths \& Limitations
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{Strengths}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt, equal height group=G]
+    {\small
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Near-instant training} — no fitting phase required
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Highly scalable} — competitive even on very large datasets
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Fully interpretable} — prediction mechanism is transparent
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Strong baseline} — any ML gain must be justified against them
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{Limitations}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt, equal height group=G]
+    {\small
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{No learning mechanism} — fixed rules, cannot adapt to data
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Monotonic distance assumption} — influence always decays smoothly
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Miss complex spatial structures} — cannot capture anisotropy
+      \item[\textcolor{detblue}{$\bullet$}] \textbf{Fragile to noise} — error degrades significantly under noisy conditions
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+## Kriging: A Geostatistical Approach
+
+\begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small Kriging goes beyond fixed rules — it models the \textbf{spatial structure} of the data itself, learning how observations relate to each other across space.}
+\end{tcolorbox}
+
+\vspace{0.15cm}
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Idea}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=F]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] Nearby observations tend to be similar
+      \item[\textcolor{geoviolet}{$\bullet$}] \textit{How similar?} — captured by the \textbf{variogram}
+      \item[\textcolor{geoviolet}{$\bullet$}] Variogram describes how similarity \textbf{changes with distance}
+      \item[\textcolor{geoviolet}{$\bullet$}] Weights derived by \textbf{minimizing prediction error variance}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Types of Kriging}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=F]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Simple Kriging} — known constant mean
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Universal Kriging} — polynomial drift
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Ordinary Kriging} — unknown constant mean
+    \end{itemize}
+    \vspace{0.15cm}
+    \centering
+    $\Rightarrow$ This benchmark focuses on \textbf{Ordinary Kriging}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+## Ordinary Kriging: The BLUP
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{The Predictor}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=E]
+    {\footnotesize Linear combination of observed values:}
+    \[
+    \hat{Z}(s_0) = \sum_{i=1}^{n} \lambda_i\, Z(s_i)
+    \]
+    {\footnotesize subject to unbiasedness constraint:}
+    \[
+    \sum_{i=1}^{n} \lambda_i = 1
+    \]
+    {\footnotesize Weights $\lambda_i$ minimize $\text{Var}(\hat{Z}(s_0) - Z(s_0))$}
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Theoretical Advantages}}
+    \vspace{0.1cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=E]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{BLUP} — Best Linear Unbiased Predictor under its \textbf{assumptions}
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Exact interpolation} at observed locations
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Smooth surfaces} — no abrupt artifacts
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Uncertainty estimates} — natural confidence intervals
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.15cm}
+
+\begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!8, arc=4pt, boxrule=1pt]
+\centering
+{\small \textit{Theoretically optimal — but optimality holds only under its \textbf{assumptions}.}}
+\end{tcolorbox}
+
+\vspace{0.4cm}
+
+## Kriging: Statistical Assumptions
+
+\begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small Kriging's guarantees rely on assumptions \textbf{often violated in real-world scenarios}.}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+\begin{columns}[T]
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Stationarity}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=I]
+    {\footnotesize
+    Assumes a \textbf{constant mean} over the entire spatial domain and a variogram that depends only on the distance between points, not on their absolute location.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Isotropy}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=I]
+    {\footnotesize
+    Assumes spatial correlation depends \textbf{only on distance}, not on direction. Any directional effect in the data causes the variogram model to become misspecified.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Gaussianity}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=I]
+    {\footnotesize
+    Implicitly assumes \textbf{Gaussian distributed} data. Skewed or heavy-tailed variables require prior transformations, adding subjectivity to the modeling pipeline.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small When assumptions fail $\Rightarrow$ \textbf{biased predictions} and \textbf{distorted uncertainty estimates}}
+\end{tcolorbox}
+
+## Kriging: Computational Limitations
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Cubic Complexity}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=J]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] Requires inversion of an $n \times n$ covariance matrix
+      \item[\textcolor{geoviolet}{$\bullet$}] Complexity: $\mathcal{O}(n^3)$
+      \item[\textcolor{geoviolet}{$\bullet$}] \textbf{Prohibitively slow} for datasets larger than $\sim$10,000 points
+      \item[\textcolor{geoviolet}{$\bullet$}] Excluded from large-scale tests in this benchmark
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Variogram Estimation}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=J]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] Must select a theoretical model (spherical, exponential, Gaussian\ldots) and fit its parameters: \textbf{nugget}, \textbf{sill}, and \textbf{range}
+      \item[\textcolor{geoviolet}{$\bullet$}] Fitting is \textbf{partly subjective}, demands experience and is sensitive to outliers
+      \item[\textcolor{geoviolet}{$\bullet$}] Prediction quality depends \textbf{directly} on variogram specification — a poor fit leads to unreliable estimates
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.15cm}
+
+\begin{tcolorbox}[colframe=geoviolet, colback=geoviolet!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small \textbf{Theoretically optimal under its assumptions — but impractical at scale.}}
+\end{tcolorbox}
+
+## Machine Learning: A New Paradigm
+
+\begin{tcolorbox}[colframe=treeOrange, colback=treeOrange!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small ML algorithms \textbf{learn predictive relationships directly from the data} — no fixed rules, no explicit stochastic models.}
+\end{tcolorbox}
+
+\vspace{0.1cm}
+
+\begin{columns}[T]
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{detblue}{Deterministic}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=detblue, colback=white, arc=4pt, boxrule=1.2pt, equal height group=K]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{detblue}{$\bullet$}] Fixed mathematical rules
+      \item[\textcolor{detblue}{$\bullet$}] No training phase
+      \item[\textcolor{detblue}{$\bullet$}] Implicit assumptions via hyperparameters
+      \item[\textcolor{detblue}{$\bullet$}] Fragile to noise
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{geoviolet}{Geostatistical}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=geoviolet, colback=white, arc=4pt, boxrule=1.2pt, equal height group=K]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{geoviolet}{$\bullet$}] Explicit stochastic model
+      \item[\textcolor{geoviolet}{$\bullet$}] Strong assumptions required
+      \item[\textcolor{geoviolet}{$\bullet$}] Optimal under assumptions
+      \item[\textcolor{geoviolet}{$\bullet$}] Complexity $\mathcal{O}(n^3)$
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{advRed}{Machine Learning}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=advRed, colback=white, arc=4pt, boxrule=1.2pt, equal height group=K]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{advRed}{$\bullet$}] \textbf{Data-driven}
+      \item[\textcolor{advRed}{$\bullet$}] \textbf{No strong assumptions}
+      \item[\textcolor{advRed}{$\bullet$}] \textbf{Highly scalable}
+      \item[\textcolor{advRed}{$\bullet$}] \textbf{Extensible} to additional covariates
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+## ML Methods: Two Families
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Tree-Based Ensemble Methods}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=H]
+    {\footnotesize
+    Combine many \textbf{decision trees} — predictions aggregated across the ensemble.
+    \vspace{0.1cm}
+
+    \textit{In this benchmark:}
+    \begin{itemize}
+      \item[\textcolor{treeOrange}{$\bullet$}] Random Forest
+      \item[\textcolor{treeOrange}{$\bullet$}] XGBoost
+      \item[\textcolor{treeOrange}{$\bullet$}] MI-GBT
+      \item[\textcolor{advRed}{$\bullet$}] GeoSpatial RF
+      \item[\textcolor{advRed}{$\bullet$}] Oblique RF
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{gamGreen}{Generalized Additive Models}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=gamGreen, colback=white, arc=4pt, boxrule=1.2pt, equal height group=H]
+    {\footnotesize
+    Target modeled as a \textbf{sum of smooth functions} of the inputs:
+    \[
+    g(\mu) = \alpha + f_1(x_1) + \cdots + f_p(x_p)
+    \]
+    \begin{itemize}
+      \item[\textcolor{gamGreen}{$\bullet$}] More \textbf{interpretable} than ensemble methods
+      \item[\textcolor{gamGreen}{$\bullet$}] Captures \textbf{nonlinear spatial trends}
+      \item[\textcolor{gamGreen}{$\bullet$}] Limited on \textbf{complex interactions}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{center}
+\begin{tcolorbox}[colframe=advRed, colback=advRed!5, arc=4pt, boxrule=1.2pt, width=0.85\textwidth]
+\centering
+{\small
+\begin{tabular}{>{\centering\arraybackslash}p{0.32\textwidth} c >{\centering\arraybackslash}p{0.32\textwidth}}
+\textcolor{treeOrange}{\textbf{Tree-based}} & & \textcolor{gamGreen}{\textbf{GAM}} \\[2pt]
+predictive power & $|$ & interpretability \\
+\end{tabular}
+}
+\end{tcolorbox}
+\end{center}
+
+## Tree-Based Methods: Bagging vs Boosting
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Random Forest — Bagging}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=B]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{treeOrange}{$\bullet$}] Trees trained \textbf{in parallel} on bootstrap samples
+      \item[\textcolor{treeOrange}{$\bullet$}] Random subset of features at each split
+      \item[\textcolor{treeOrange}{$\bullet$}] Predictions \textbf{averaged} across all trees
+      \item[\textcolor{treeOrange}{$\bullet$}] \textbf{Reduced variance}, robust, stable
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Gradient Boosting — XGBoost, MI-GBT}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=B]
+    {\footnotesize
+    \begin{itemize}
+      \item[\textcolor{treeOrange}{$\bullet$}] Trees built \textbf{sequentially} — each corrects residuals of the previous
+      \item[\textcolor{treeOrange}{$\bullet$}] Iterative refinement $\Rightarrow$ \textbf{higher accuracy}
+      \item[\textcolor{treeOrange}{$\bullet$}] Higher risk of \textbf{overfitting} if not regularized
+      \item[\textcolor{treeOrange}{$\bullet$}] More sensitive to \textbf{hyperparameter tuning}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{center}
+\begin{tcolorbox}[colframe=treeOrange, colback=treeOrange!8, arc=4pt, boxrule=1.2pt, width=0.75\textwidth]
+\centering
+{\footnotesize
+\begin{tabular}{lcc}
+ & \textbf{Random Forest} & \textbf{Gradient Boosting} \\[2pt]
+\textit{Training} & Parallel & Sequential \\
+\textit{Accuracy} & Good & Higher \\
+\textit{Overfitting risk} & Low & Moderate \\
+\textit{Tuning sensitivity} & Low & High \\
+\end{tabular}
+}
+\end{tcolorbox}
+\end{center}
+
+## Tree-Based Methods on Spatial Data: The Challenges
+
+\begin{columns}[T]
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Spatial Autocorrelation}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=C]
+    {\footnotesize
+    Nearby observations tend to have \textbf{similar values}. Standard trees do not account for this dependence structure and may \textbf{overfit local noise}.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Anisotropy}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=C]
+    {\footnotesize
+    Spatial dependence may vary \textbf{with direction}, not just distance. Axis-aligned splits produce only \textbf{N-S or E-W} boundaries — oblique patterns require many splits to approximate.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.31\textwidth}
+    \centering
+    \textbf{\textcolor{treeOrange}{Large-Scale Trends}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=treeOrange, colback=white, arc=4pt, boxrule=1.2pt, equal height group=C]
+    {\footnotesize
+    Smooth gradients spanning the entire domain — elevation, temperature, housing prices. Trees approximate these with \textbf{stepwise partitions}, leading to deep trees and potential overfitting.
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.1cm}
+
+\begin{tcolorbox}[colframe=treeOrange, colback=treeOrange!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small Standard tree-based models \textbf{are not specifically designed} for geospatial data — adaptation is required to unlock their full potential.}
+\end{tcolorbox}
+
+## Adapting Tree-Based Methods to Spatial Data
+
+\vspace{0.1cm}
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{stratTeal}{Strategy 1 — Modify the Algorithm}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, equal height group=D]
+    {\footnotesize
+    \textbf{GeoSpatial RF:}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] Incorporates \textbf{spatial information} into ensemble construction
+    \end{itemize}
+    \textbf{Oblique RF:}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Oblique splits} not constrained to axes
+      \item[\textcolor{stratTeal}{$\bullet$}] Naturally captures \textbf{spatial gradients}
+    \end{itemize}
+    \textbf{Drawback:} computationally demanding
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \textbf{\textcolor{stratTeal}{Strategy 2 — Coordinate Rotation}}
+    \vspace{0.05cm}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, equal height group=D]
+    {\footnotesize
+    A novel preprocessing strategy that \textbf{augments the feature space} with rotated versions of the original spatial coordinates.
+
+    \vspace{0.1cm}
+    The hypothesis: this simple transformation could allow standard tree-based models to \textbf{overcome their geometric limitations} — without sacrificing scalability.
+
+    \vspace{0.1cm}
+    \textbf{Applied to:} RF, XGBoost, MI-GBT, GAM
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+\vspace{0.15cm}
+
+\begin{tcolorbox}[colframe=stratTeal, colback=stratTeal!8, arc=4pt, boxrule=1.2pt]
+\centering
+{\small \textbf{The true goal of this benchmark:} does Coordinate Rotation improve predictive accuracy — and is the gain worth the computational cost?}
+\end{tcolorbox}
+
+# Coordinate Rotation
+
+## The Problem: Axis-Aligned Splits
+
+\begin{columns}
+\begin{column}{0.52\textwidth}
+
+\textbf{Geometric Constraint:}
+Standard tree-based methods rely \textbf{exclusively on axis-aligned splits} during construction.
+
+\vspace{0.6em}
+
+\textbf{In spatial context:}
+\begin{itemize}
+  \item Splits constrained to \textbf{North-South} or \textbf{East-West} orientations
+  \item Diagonal patterns approximated via \textbf{staircase accumulation}
+\end{itemize}
+
+\vspace{0.6em}
+
+\textbf{Impact:}
+Many recursive splits needed for oblique boundaries
+
+\end{column}
+\begin{column}{0.44\textwidth}
+
+\centering
+\begin{tikzpicture}[scale=0.85]
+  \draw[->] (0,0) -- (4.5,0) node[right] {East};
+  \draw[->] (0,0) -- (0,4.5) node[above] {North};
+  \draw[thick, mlcol, line width=1.4pt] (0.5,0.5) -- (3.8,3.8);
+  \draw[detcol, ultra thick] (0,1.5) -- (1.5,1.5) -- (1.5,2.5) -- (2.5,2.5) -- (2.5,3.5) -- (4,3.5);
+  \node[mlcol] at (2.8,3.3) {\small\textbf{True pattern}};
+  \node[detcol] at (3.2,0.9) {\small\textbf{Tree approximation}};
+\end{tikzpicture}
+
+\end{column}
+\end{columns}
+
+
+## Two Strategies to Overcome Limitations
+
+\begin{columns}[T]
+
+  \begin{column}{0.48\textwidth}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, equal height group=M]
+    {\footnotesize
+    \textbf{Oblique Decision Trees}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] Directly learn \textbf{oblique splits}
+      \item[\textcolor{stratTeal}{$\bullet$}] Linear combinations at each node
+      \item[\textcolor{stratTeal}{$\bullet$}] Flexible geometry
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Computationally demanding}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{tcolorbox}[colframe=stratTeal, colback=white, arc=4pt, boxrule=1.2pt, equal height group=M]
+    {\footnotesize
+    \textbf{Coordinate Rotation (CR)}
+    \begin{itemize}
+      \item[\textcolor{stratTeal}{$\bullet$}] Augment feature space with \textbf{rotated coordinates}
+      \item[\textcolor{stratTeal}{$\bullet$}] Standard axis-aligned algorithm
+      \item[\textcolor{stratTeal}{$\bullet$}] Effective oblique learning
+      \item[\textcolor{stratTeal}{$\bullet$}] \textbf{Low computational overhead}
+    \end{itemize}
+    }
+    \end{tcolorbox}
+  \end{column}
+
+\end{columns}
+
+
+## Rotation Method: Feature Augmentation
+
+\textbf{Transformation Procedure:}
+Rotations applied around the \textbf{centroid} $(\bar{x}, \bar{y})$ for $k$ axes
+
+\vspace{0.5em}
+
+\begin{enumerate}
+  \item Compute spatial centroid:
+  $$\bar{x} = \frac{1}{n}\sum_{i=1}^n x_i, \quad \bar{y} = \frac{1}{n}\sum_{i=1}^n y_i$$
+
+  \item Generate rotation angles: $\theta_j = \frac{360^\circ \cdot j}{k}$ \quad for $j = 0, 1, \ldots, k-1$
+
+  \item For each angle $\theta_j$, transform all points:
+\end{enumerate}
+
+\vspace{0.1em}
+
+\formulabox{ensaiblue}{
+$$x'_{ij} = \bar{x} + (x_i - \bar{x})\cos\theta_j - (y_i - \bar{y})\sin\theta_j$$
+$$y'_{ij} = \bar{y} + (x_i - \bar{x})\sin\theta_j + (y_i - \bar{y})\cos\theta_j$$
+}
+
+
+## Geometric Interpretation
+
+\begin{columns}
+\begin{column}{0.50\textwidth}
+
+\textbf{Change of Reference System:}
+Each rotation defines a new coordinate system oriented at angle $\theta_j$ w.r.t. the original.
+
+\vspace{0.6em}
+
+\textbf{Key Property:}
+Spatial patterns appearing \textbf{oblique} in original coordinates may become \textbf{axis-aligned} in a rotated system.
+
+\vspace{0.6em}
+
+\textbf{Augmented Feature Space:}
+\begin{itemize}
+  \item Original: $(x, y)$
+  \item After CR: $(x, y, x'_1, y'_1, \ldots, x'_{k-1}, y'_{k-1})$
+  \item Trees auto-select best orientation per split
+\end{itemize}
+
+\end{column}
+\begin{column}{0.46\textwidth}
+
+\centering
+\includegraphics[width=\textwidth]{coordinaterotation_converted.png}
+
+\vspace{0.5em}
+
+\begin{tcolorbox}[colback=ensaiblue!8, colframe=ensaiblue!70, arc=4pt]
+\small\centering
+\textbf{Computational Efficiency:} $O(nk)$ preprocessing
+\end{tcolorbox}
+
+\end{column}
+\end{columns}
+
+
+## Model Selection Strategy
+
+\textbf{CR is applied selectively} based on algorithmic properties:
+
+\vspace{0.5em}
+
+\begin{columns}
+\begin{column}{0.52\textwidth}
+
+\textbf{Models with CR variants:}
+\begin{itemize}
+  \item Random Forest (RF vs RF-CR)
+  \item XGBoost (XGB vs XGB-CR)
+  \item MI-GBT (MI-GBT vs MI-GBT-CR)
+  \item GAM (GAM vs GAM-CR)
+\end{itemize}
+
+\end{column}
+\begin{column}{0.44\textwidth}
+
+\textbf{Comparative baselines:}
+\begin{itemize}
+  \item Oblique RF, GeoRF
+  \item Ordinary Kriging
+  \item IDW, K-NN
+\end{itemize}
+
+\end{column}
+\end{columns}
+
+\vspace{0.8em}
+\centering
+\begin{tcolorbox}[colback=stratTeal!8, colframe=stratTeal, arc=4pt, boxrule=1.2pt]
+\small\centering
+\textbf{Goal:} Isolate the specific impact of coordinate rotation on standard axis-aligned tree algorithms and compare against both traditional and oblique methods.
+\end{tcolorbox}
+
+
+# Experimental Setup
+
+## Dataset Characterization
+
+\centering
+
+\textbf{14 datasets} covering various scenarios of structure, size, and noise:
+
+\vspace{0.5em}
+
+\small
+\begin{tabular}{>{\centering\arraybackslash}l >{\centering\arraybackslash}l >{\centering\arraybackslash}l >{\centering\arraybackslash}l}
+\toprule
+\textbf{Origin} & \textbf{Data Source} & \textbf{Structure} & \textbf{Size Range} \\
+\midrule
+\textbf{Synthetic} & Matérn SRF & Grid / No-Grid & 5k to 10M \\
+\textbf{Real (IGN)} & BD ALTI (France) & No-Grid & \textasciitilde{}7M (Unstructured) \\
+\textbf{Real (IGN)} & RGE ALTI (France) & Grid (5m) & \textasciitilde{}22 Billion \\
+\textbf{Real} & Cal. Housing & No-Grid & \textasciitilde{}20k (Noisy) \\
+\textbf{Noisy} & Synthetic SRF & No-Grid & Low, Med, High noise \\
+\bottomrule
+\end{tabular}
+\normalsize
+
+\vspace{0.8em}
+
+\textbf{Synthetic generation:}
+
+\vspace{0.1cm}
+
+\small Matérn covariance model (dim=2, variance=1, length scale=10) with fixed seed for reproducibility.
+\normalsize
+
+
+## Validation Strategy and Metrics
+
+\textbf{Performance Metrics:}
+\begin{itemize}
+  \item \textbf{$R^2$}: Scale-invariant overall fit \quad $\bullet$ \quad \textbf{RMSE}: Penalizes large errors
+  \item \textbf{MAE}: Robust to outliers \quad $\bullet$ \quad \textbf{Training Time}: Practical scalability
+\end{itemize}
+
+\vspace{0.6em}
+
+\textbf{Two-Phase Selection Strategy:}
+\begin{enumerate}
+  \item Benchmark all algorithms on small datasets ($N \approx 5$k)
+  \item Preselect efficient candidates for larger datasets
+\end{enumerate}
+
+\vspace{0.6em}
+
+\textbf{Benchmark Procedure:}
+\begin{itemize}
+  \item \textbf{Validation:} Randomized Search with K-Fold Cross-Validation
+  \item \textbf{Adaptive tuning:} Small datasets (20 iter, 5-fold, 10min timeout) $\rightarrow$ Large datasets (5 iter, 3-fold)
+  \item \textbf{CR Implementation:} 23 rotation angles \quad $\bullet$ \quad \textbf{Environment:} Python 3.13, SSPCloud
+  \item \textbf{Reproducibility:} Fixed seeds (42 for models, 20170519 for synthetic data)
+\end{itemize}
+
+# Results
+
+```{python}
+#| echo: false
+#| output: false
+
+# ============================================================================
+# 0. GLOBAL CONFIGURATION & DATA LOADING
+# ============================================================================
+import json
+import matplotlib.pyplot as plt
+import numpy as np
+import seaborn as sns
+import pandas as pd
+from pathlib import Path
+from math import pi
+
+sns.set_style("white")
+plt.rcParams['figure.dpi'] = 300
+plt.rcParams['font.size'] = 11
+
+# --- Loading Data ---
+results = []
+def load_json_results(filename):
+    path = Path(filename)
+    if path.exists():
+        with open(path, 'r') as f:
+            data = json.load(f)
+            if isinstance(data, list): return data
+            if isinstance(data, dict) and 'results' in data: return data['results']
+    return []
+
+# Attempt to load files
+results.extend(load_json_results('results/results_small.json'))
+results.extend(load_json_results('results/results_large_noisy.json'))
+
+# Fallback if files are missing (avoids compilation errors)
+if not results and Path('example.json').exists():
+    with open('example.json', 'r') as f:
+        results = json.load(f)['results']
+
+df = pd.DataFrame(results)
+if 'training_time' in df.columns:
+    df['time_train'] = df['training_time'].fillna(df.get('time_train', 0))
+
+# --- Definitions ---
+deterministic_models = ['knn_3', 'idw_p3']
+geostatistical_models = ['kriging']
+tree_models = ['random_forest', 'random_forest_cr', 'xgboost', 'xgboost_cr', 'mixgboost', 'mixgboost_cr']
+advanced_tree_models = ['oblique_rf', 'geoRF']
+gam_models = ['gam', 'gam_cr']
+
+model_names = {
+    'random_forest': 'RF', 'random_forest_cr': 'RF-CR',
+    'xgboost': 'XGB', 'xgboost_cr': 'XGB-CR',
+    'mixgboost': 'MiGBT', 'mixgboost_cr': 'MiGBT-CR',
+    'oblique_rf': 'Oblique RF', 'geoRF': 'GeoRF',
+    'knn_3': 'KNN', 'idw_p3': 'IDW',
+    'kriging': 'Kriging', 'gam': 'GAM', 'gam_cr': 'GAM-CR'
+}
+
+dataset_names = {
+    'rgealti_48': 'Real Grid Small',
+    'rgealti': 'Real Grid Large',
+    'bdalti_48': 'Real No-Grid Small',
+    'bdalti': 'Real No-Grid Large',
+    'S-G-Sm': 'Synth Grid Small',
+    'S-G-Lg': 'Synth Grid Large',
+    'S-NG-Sm': 'Synth No-Grid Small',
+    'S-NG-Lg': 'Synth No-Grid Large',
+    'S-G-Lg-N': 'Synth Grid Large (Noisy)',
+    'S-NG-Lg-N': 'Synth No-Grid Large (Noisy)',
+    'cal_housing': 'Housing (Real Noisy)'
+}
+
+color_deterministic = '#2E86AB'
+color_geostat = '#A23B72'
+color_tree = '#F18F01'
+color_advanced_tree = '#C73E1D'
+color_gam = '#6A994E'
+
+def get_model_color(model):
+    if model in deterministic_models: return color_deterministic
+    if model in geostatistical_models: return color_geostat
+    if model in tree_models: return color_tree
+    if model in advanced_tree_models: return color_advanced_tree
+    if model in gam_models: return color_gam
+    return '#888888'
+
+```
+
+## Selection phase
+```{python}
+#| echo: false
+#| fig-align: center
+from matplotlib.lines import Line2D
+
+def plot_small_datasets_landscape():
+    """
+    Plot: Training Time (X) vs RMSE (Y) for Small Datasets.
+    Color: Algorithm
+    Shape: Dataset
+    """
+    small_ds = ['rgealti_48', 'bdalti_48', 'S-G-Sm', 'S-NG-Sm']
+
+    ds_shapes = {
+        'rgealti_48': 'o', 'bdalti_48': 's',
+        'S-G-Sm': '^', 'S-NG-Sm': 'D'
+    }
+
+    plot_data = []
+
+    for m_key in model_names.keys():
+        for ds in small_ds:
+            res = next((r for r in results if r['model'] == m_key and r['dataset'] == ds), None)
+            if res:
+                val_rmse = res.get('rmse', np.sqrt(res.get('mse', 0)))
+
+                plot_data.append({
+                    'Model': model_names[m_key],
+                    'ModelKey': m_key,
+                    'Dataset': dataset_names.get(ds, ds), # Safe get
+                    'DatasetKey': ds,
+                    'Time': res.get('training_time', 0.001),
+                    'RMSE': val_rmse,
+                    'Color': get_model_color(m_key),
+                    'Shape': ds_shapes[ds]
+                })
+
+    df = pd.DataFrame(plot_data)
+
+    fig, ax = plt.subplots(figsize=(8, 4))
+
+    for _, row in df.iterrows():
+        ax.scatter(row['Time'], row['RMSE'],
+                   c=row['Color'], marker=row['Shape'],
+                   s=75, alpha=0.7, edgecolors='black', linewidth=0.5)
+
+    ax.set_xscale('log')
+    ax.set_xlabel('Training Time (seconds) - Log Scale')
+    ax.set_ylabel('RMSE (Lower is Better)')
+    ax.set_title('Small Datasets: Efficiency vs. Accuracy Trade-off')
+    ax.grid(True, linestyle='--', alpha=0.3)
+
+    # --- LEGEND 1: Colors (Algorithms) ---
+    legend_elements_color = [
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_deterministic, markersize=10, label='Deterministic'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_tree, markersize=10, label='Tree Ensemble'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_advanced_tree, markersize=10, label='Advanced Tree'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_geostat, markersize=10, label='Geostatistical'),
+        Line2D([0], [0], marker='o', color='w', markerfacecolor=color_gam, markersize=10, label='GAM'),
+    ]
+    # Save this legend to a variable
+    first_legend = ax.legend(handles=legend_elements_color, title="Algorithm Family", loc='upper left')
+
+    # Crucial Step: Manually add the first legend back to the plot layout
+    ax.add_artist(first_legend)
+
+    # --- LEGEND 2: Shapes (Datasets) ---
+    # We use gray markers to indicate "Shape only"
+    legend_elements_shape = [
+        Line2D([0], [0], marker=ds_shapes[ds], color='w', markerfacecolor='gray',
+               markeredgecolor='black', markersize=8, label=dataset_names.get(ds, ds))
+        for ds in small_ds
+    ]
+
+    # Add the second legend to the bottom right
+    ax.legend(handles=legend_elements_shape, title="Dataset Source", loc='lower right')
+
+    plt.tight_layout()
+    plt.show()
+
+plot_small_datasets_landscape()
+```
+
+
+## Scalability: Augmentation Factor
+
+```{python}
+#| echo: false
+#| fig-align: center
+
+# ==========================================
+# PLOT B: Average Large Time / Average Small Time
+# ==========================================
+small_datasets = ['S-G-Sm', 'S-NG-Sm', 'rgealti_48', 'bdalti_48']
+large_datasets = ['S-G-Lg', 'S-NG-Lg', 'rgealti', 'bdalti']
+
+df_small = df[df['dataset'].isin(small_datasets)].copy()
+df_large = df[df['dataset'].isin(large_datasets)].copy()
+
+if not df_small.empty and not df_large.empty:
+    avg_small = df_small.groupby('model')['time_train'].mean()
+    avg_large = df_large.groupby('model')['time_train'].mean()
+
+    aug_df = pd.DataFrame({'small': avg_small, 'large': avg_large}).dropna()
+    aug_df['Factor'] = aug_df['large'] / aug_df['small']
+    aug_df = aug_df.sort_values('Factor')
+
+    aug_df['Display'] = [model_names.get(x, x) for x in aug_df.index]
+    colors = [get_model_color(x) for x in aug_df.index]
+
+    # Adjusted figsize to be wider and shorter (11, 4.5)
+    plt.figure(figsize=(11, 4.5))
+    ax = sns.barplot(x='Display', y='Factor', data=aug_df, palette=colors)
+
+    plt.axhline(1, color='#333333', linestyle='--', linewidth=1, alpha=0.5)
+    plt.title('Scalability: Training Time Augmentation Factor\n(Average Large Time / Average Small Time)', fontweight='bold')
+    plt.ylabel('Multiplier (x times slower)')
+    plt.xlabel('')
+    plt.xticks(rotation=45, ha='right')
+
+    for i, v in enumerate(aug_df['Factor']):
+        ax.text(i, v + (v * 0.05), f"{v:.1f}x", ha='center', va='bottom', fontweight='bold', fontsize=10)
+
+    sns.despine()
+    plt.tight_layout()
+    plt.show()
+```
+
+## The Scaling Wall
+
+```{python}
+#| echo: false
+#| fig-align: center
+
+# ==========================================
+# PLOT A: Scaling Wall (Log Scale)
+# ==========================================
+target_datasets = ['S-NG-Lg', 'S-NG-VLg', 'S-NG-ELg']
+subset = df[df['dataset'].isin(target_datasets)].copy()
+
+if not subset.empty:
+    subset['sort'] = subset['dataset'].map({k: i for i, k in enumerate(target_datasets)})
+    subset = subset.sort_values('sort')
+    palette = {m: get_model_color(m) for m in subset['model'].unique()}
+
+    # Adjusted figsize (11, 4.5)
+    plt.figure(figsize=(11, 4.5))
+    sns.lineplot(data=subset, x='dataset', y='time_train', hue='model',
+                 palette=palette, style='model', markers=True, dashes=False,
+                 linewidth=2.5, markersize=9)
+
+    plt.yscale('log')
+    plt.title('The Scaling Wall: Training Time Explosion', fontweight='bold')
+    plt.ylabel('Time (Seconds) - Log Scale', fontsize=11)
+    plt.xlabel('')
+
+    labels_map = {'S-NG-Lg': 'Large (100k)', 'S-NG-VLg': 'Very Large (1M)', 'S-NG-ELg': 'Extrem. Large (10M)'}
+    plt.xticks(range(3), [labels_map.get(d, d) for d in target_datasets])
+
+    plt.axhline(60, color='orange', linestyle=':', alpha=0.8)
+    plt.text(0, 65, '1 Minute', color='orange', fontsize=9)
+    plt.axhline(3600, color='red', linestyle=':', alpha=0.8)
+    plt.text(0, 4000, '1 Hour (Impractical)', color='red', fontsize=9)
+
+    handles, labels = plt.gca().get_legend_handles_labels()
+    new_labels = [model_names.get(l, l) for l in labels]
+    plt.legend(handles, new_labels, bbox_to_anchor=(1.02, 1), loc='upper left', fontsize=9)
+
+    plt.grid(True, which="major", ls="-", alpha=0.2)
+    sns.despine()
+    plt.tight_layout()
+    plt.show()
+```
+
+## Robustness Ranking
+
+```{python}
+#| echo: false
+#| fig-align: center
+
+# ==========================================
+# PLOT D: Bump Chart (Constant Distance)
+# ==========================================
+noise_map = {
+    'S-NG-Lg': 'Clean\n(σ=0)', 'S-NG-Lg-N1': 'Low Noise\n(σ=0.5)',
+    'S-NG-Lg-N2': 'Med Noise\n(σ=1.0)', 'S-NG-Lg-N3': 'High Noise\n(σ=2.0)'
+}
+noise_order = list(noise_map.keys())
+subset = df[df['dataset'].isin(noise_order)].copy()
+
+if not subset.empty:
+    pivot = subset.pivot(index='model', columns='dataset', values='rmse')[noise_order]
+    ranks = pivot.rank(axis=0, method='first', ascending=True)
+    diffs = -ranks.diff(axis=1)
+
+    # Adjusted figsize (11, 5.5) - Needs height for ranking, but controlled
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    coords = {i: {} for i in range(len(noise_order))}
+
+    for col_idx, col_key in enumerate(noise_order):
+        current_ranks = ranks[col_key].sort_values()
+        for model, rank in current_ranks.items():
+            rmse = pivot.loc[model, col_key]
+            y_pos = rank
+            coords[col_idx][model] = y_pos
+
+            name = model_names.get(model, model)
+            color = get_model_color(model)
+
+            change_text, c_color = "", "gray"
+            if col_idx > 0:
+                chg = diffs.loc[model, col_key]
+                if chg > 0: change_text, c_color = f"▲", "#27ae60"
+                elif chg < 0: change_text, c_color = f"▼", "#c0392b"
+                else: change_text, c_color = "=", "#bdc3c7"
+
+            ax.text(col_idx - 0.1, y_pos, f"{int(rank)}", ha='right', va='center',
+                    fontsize=10, fontweight='bold', color='#95a5a6')
+
+            box_props = dict(facecolor='white', edgecolor='none', alpha=0.8, pad=0.3)
+            ax.text(col_idx, y_pos, f"{name}", ha='center', va='center',
+                    fontsize=9, fontweight='bold', color=color, bbox=box_props)
+
+            if change_text:
+                ax.text(col_idx + 0.15, y_pos, change_text, ha='left', va='center',
+                        fontsize=8, fontweight='bold', color=c_color)
+
+    for model in pivot.index:
+        color = get_model_color(model)
+        lw = 2.5 if model in ['knn_3', 'idw_p3', 'random_forest_cr'] else 1
+        alpha = 0.5 if model in ['knn_3', 'idw_p3'] else 0.2
+        ys = [coords[i].get(model) for i in range(len(noise_order))]
+        if None not in ys:
+            ax.plot(range(len(noise_order)), ys, color=color, alpha=alpha, linewidth=lw, zorder=0)
+
+    ax.set_ylim(len(pivot)+0.5, 0.5)
+    ax.set_xlim(-0.3, len(noise_order) - 0.7)
+
+    ax.xaxis.tick_top()
+    ax.set_xticks(range(len(noise_order)))
+    ax.set_xticklabels([noise_map[k] for k in noise_order], fontsize=11, fontweight='bold')
+    ax.set_yticks([])
+    sns.despine(left=True, bottom=True, right=True, top=True)
+
+    for x in range(len(noise_order) - 1):
+        ax.axvline(x + 0.5, color='#ecf0f1', linestyle='-', linewidth=2)
+
+    plt.tight_layout()
+    plt.show()
+```
+
+## Cost vs. Benefit : Coordinates Rotation
+
+```{python}
+#| echo: false
+#| fig-align: center
+
+# ==========================================
+# PLOT F: 3 Radar Charts on ONE Slide
+# ==========================================
+from matplotlib.lines import Line2D  # <--- IMPORT ADDED HERE
+from math import pi
+import matplotlib.pyplot as plt
+
+models_to_plot = [
+    ('random_forest', 'random_forest_cr', 'Random Forest'),
+    ('xgboost', 'xgboost_cr', 'XGBoost'),
+    ('mixgboost', 'mixgboost_cr', 'MiGBT')
+]
+
+# Create subplots: 1 Row, 3 Columns
+fig, axes = plt.subplots(1, 3, figsize=(14, 5), subplot_kw=dict(polar=True))
+
+# Shared Legend Elements
+legend_elements = [
+    Line2D([0], [0], color='#2ecc71', lw=2, label='Precision Gain (Factor)'),
+    Line2D([0], [0], color='#e74c3c', lw=2, label='Time Cost (Factor)')
+]
+
+for i, (base_model, cr_model, title) in enumerate(models_to_plot):
+    ax = axes[i]
+
+    # Get Data
+    base_df = df[df['model'] == base_model].set_index('dataset')
+    cr_df = df[df['model'] == cr_model].set_index('dataset')
+    common = base_df.index.intersection(cr_df.index)
+    friendly_ds = [d for d in common if d in dataset_names]
+
+    p_data, t_data, labels = [], [], []
+
+    for ds in friendly_ds:
+        b_rmse, b_time = base_df.loc[ds, 'rmse'], base_df.loc[ds, 'time_train']
+        c_rmse, c_time = cr_df.loc[ds, 'rmse'], cr_df.loc[ds, 'time_train']
+
+        if c_rmse > 0 and b_time > 0:
+            p_factor = b_rmse / c_rmse
+            t_factor = c_time / b_time
+            if p_factor < 10 and t_factor < 10:
+                p_data.append(p_factor)
+                t_data.append(t_factor)
+                labels.append(dataset_names[ds])
+
+    if len(labels) >= 3:
+        # Closing loops
+        labels_plot = labels
+        angles = [n / float(len(labels_plot)) * 2 * pi for n in range(len(labels_plot))]
+        angles += [angles[0]]
+        p_data += [p_data[0]]
+        t_data += [t_data[0]]
+
+        ax.set_theta_offset(pi / 2)
+        ax.set_theta_direction(-1)
+
+        # Labels
+        ax.set_xticks(angles[:-1])
+        ax.set_xticklabels(labels_plot, size=8, fontweight='bold')
+        ax.set_rlabel_position(0)
+
+        # Plots
+        ax.plot(angles, t_data, linewidth=2, linestyle='-', color='#e74c3c')
+        ax.fill(angles, t_data, color='#e74c3c', alpha=0.3)
+
+        ax.plot(angles, p_data, linewidth=2, linestyle='-', color='#2ecc71')
+        ax.fill(angles, p_data, color='#2ecc71', alpha=0.3)
+
+        ax.plot(angles, [1.0]*len(angles), linewidth=1, linestyle='--', color='black', alpha=0.5)
+
+        ax.set_title(title, size=12, weight='bold', pad=15)
+        # Fix overlapping labels with padding
+        ax.tick_params(pad=10)
+
+# Single Legend at Bottom
+fig.legend(handles=legend_elements, loc='lower center',
+           bbox_to_anchor=(0.5, 0.0), ncol=2, fontsize=10)
+
+plt.tight_layout()
+# Add space for legend
+plt.subplots_adjust(bottom=0.2)
+plt.show()
+```
+
+
+## Take Away on CR
+
+
+
+## Conclusion
+
+## Thank You
+
+\begin{center}
+
+\vspace{2.5em}
+
+{\Large \textbf{Questions?}}
+
+\vspace{2em}
+
+\textcolor{ensaiblue}{\textbf{GitHub Repository}}\\
+\small
+\href{https://github.com/oliviermeslin/benchmark_spatial_interpolation}{\texttt{github.com/oliviermeslin/benchmark\_spatial\_interpolation}}
+
+\end{center}
