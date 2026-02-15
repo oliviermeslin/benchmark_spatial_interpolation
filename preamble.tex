@@ -6,43 +6,58 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-% fontawesome5 removed – using text symbols instead
 \usepackage{tcolorbox}
-\tcbuselibrary{most}
+\tcbuselibrary{most, skins}
 \usepackage{array}
 \usepackage{colortbl}
 \usepackage{tabularx}
+\usepackage{microtype}
+\usepackage{fontspec}
+\usepackage[absolute,overlay]{textpos}
+\setlength{\TPHorizModule}{\paperwidth}
+\setlength{\TPVertModule}{\paperheight}
 
-% ─── Custom colours ──────────────────────────────────────────────────────────
+% ─── Colours ─────────────────────────────────────────────────────────────────
 \definecolor{ensaiblue}{RGB}{0,62,126}
 \definecolor{ensailight}{RGB}{173,210,240}
-\definecolor{detcol}{RGB}{41,128,185}    % deterministic – blue
-\definecolor{geocol}{RGB}{39,174,96}     % geostatistical – green
-\definecolor{mlcol}{RGB}{192,57,43}      % machine learning – red
+\definecolor{detcol}{RGB}{41,128,185}
+\definecolor{geocol}{RGB}{39,174,96}
+\definecolor{mlcol}{RGB}{192,57,43}
 \definecolor{accentgold}{RGB}{212,175,55}
 \definecolor{lightgray}{RGB}{245,245,245}
 \definecolor{darkgray}{RGB}{80,80,80}
+\definecolor{detblue}{HTML}{1f77b4}
+\definecolor{geoviolet}{HTML}{9467bd}
+\definecolor{treeOrange}{HTML}{ff7f0e}
+\definecolor{advRed}{HTML}{d62728}
+\definecolor{gamGreen}{HTML}{2ca02c}
+\definecolor{mainblue}{HTML}{003472}
+\definecolor{stratTeal}{HTML}{17becf}
 
-% ─── Seahorse override: keep palette but tweak title block ───────────────────
+% ─── Beamer colours ──────────────────────────────────────────────────────────
 \setbeamercolor{frametitle}{bg=ensaiblue, fg=white}
-\setbeamercolor{title}{fg=white}
-\setbeamercolor{author}{fg=ensailight}
-\setbeamercolor{date}{fg=ensailight}
+\setbeamercolor{title}{fg=white, bg=mainblue}
+\setbeamercolor{subtitle}{fg=white, bg=mainblue}
+\setbeamercolor{author}{fg=black}
+\setbeamercolor{date}{fg=black}
 \setbeamercolor{block title}{bg=ensaiblue!80, fg=white}
 \setbeamercolor{block body}{bg=ensaiblue!8}
 \setbeamercolor{alerted text}{fg=accentgold}
 \setbeamercolor{item}{fg=ensaiblue}
 \setbeamercolor{subitem}{fg=darkgray}
+\setbeamercolor{author in head/foot}{fg=white, bg=mainblue!70}
+\setbeamercolor{title in head/foot}{fg=white, bg=mainblue!85}
+\setbeamercolor{date in head/foot}{fg=white, bg=mainblue}
 
-% ─── Fonts ───────────────────────────────────────────────────────────────────
+% ─── Beamer fonts ────────────────────────────────────────────────────────────
 \setbeamerfont{frametitle}{size=\large, series=\bfseries}
 \setbeamerfont{block title}{series=\bfseries}
 \setbeamerfont{title}{size=\LARGE, series=\bfseries}
 
-% ─── Remove nav symbols ──────────────────────────────────────────────────────
+% ─── Templates ───────────────────────────────────────────────────────────────
 \setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
 
-% ─── Progress footline ───────────────────────────────────────────────────────
 \setbeamertemplate{footline}{%
   \leavevmode%
   \hbox{%
@@ -58,29 +73,32 @@
 }
 
 % ─── Section slide ───────────────────────────────────────────────────────────
+\newfontface\sectionfont{Ubuntu}[BoldFont = Ubuntu Bold]
+
 \AtBeginSection[]{
-  \begin{frame}
-    \vfill
-    \centering
-    \begin{tcolorbox}[
-      colback=ensaiblue, colframe=ensaiblue,
-      width=0.75\textwidth,
-      arc=6pt, boxrule=0pt,
-      halign=center, valign=center,
-      fontupper=\Large\bfseries\color{white}
-    ]
-      \insertsectionhead
-    \end{tcolorbox}
-    \vfill
+  \begingroup
+  \setbeamertemplate{background}{%
+    \begin{tikzpicture}
+      \fill[mainblue] (0,0) rectangle (\paperwidth,\paperheight);
+    \end{tikzpicture}%
+  }
+  \setbeamertemplate{footline}{}
+  \begin{frame}[plain]
+  \vfill
+  \centering
+  \textcolor{white}{%
+    {\sectionfont\bfseries\fontsize{30}{38}\selectfont\textls[150]{\MakeUppercase{\insertsectionhead}}}%
+  }
+  \vfill
   \end{frame}
+  \endgroup
 }
 
-% ─── Coloured family badges ───────────────────────────────────────────────────
+% ─── Custom commands ─────────────────────────────────────────────────────────
 \newcommand{\detbadge}{\colorbox{detcol!20}{\textcolor{detcol}{\textbf{Deterministic}}}}
 \newcommand{\geobadge}{\colorbox{geocol!20}{\textcolor{geocol}{\textbf{Geostatistical}}}}
 \newcommand{\mlbadge}{\colorbox{mlcol!20}{\textcolor{mlcol}{\textbf{Machine Learning}}}}
 
-% ─── Coloured formula box ─────────────────────────────────────────────────────
 \newcommand{\formulabox}[2]{%
   \begin{tcolorbox}[
     colback=#1!8, colframe=#1!60,
@@ -91,6 +109,6 @@
   \end{tcolorbox}
 }
 
-% ─── Tighter itemize ─────────────────────────────────────────────────────────
+% ─── Spacing ─────────────────────────────────────────────────────────────────
 \setlength{\itemsep}{3pt}
 \setlength{\parskip}{2pt}
