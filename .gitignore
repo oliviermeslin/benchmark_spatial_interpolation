@@ -25,3 +25,9 @@ results/
 **/*.pdf
 /presentation_files
 /presentation.html
+
+**/**zarr**/
+**/*.parquet
+**/*.grib
+**/*.idx
+**/*.zip
