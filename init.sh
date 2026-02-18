@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# 1. Install System Dependencies (Added libopenmpi-dev)
-if ! command -v cmake &> /dev/null || ! ldconfig -p | grep -q libmpi; then
-    echo "Dependencies missing. Installing..."
-    sudo apt-get update
-    # cmake and build-essential for dlib
-    # libopenmpi-dev for mpi4py
-    sudo apt-get install -y cmake build-essential python3-dev libopenmpi-dev
-else
-    echo "System dependencies already present."
-fi
+# # 1. Install System Dependencies (Added libopenmpi-dev)
+# if ! command -v cmake &> /dev/null || ! ldconfig -p | grep -q libmpi; then
+#     echo "Dependencies missing. Installing..."
+#     sudo apt-get update
+#     # cmake and build-essential for dlib
+#     # libopenmpi-dev for mpi4py
+#     sudo apt-get install -y cmake build-essential python3-dev libopenmpi-dev
+# else
+#     echo "System dependencies already present."
+# fi
 
 # 2. Identify the repository
 # Using -maxdepth 1 to ensure we only look at top-level folders in /work
