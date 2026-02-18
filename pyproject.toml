@@ -27,4 +27,9 @@ dependencies = [
     "pygam>=0.9.0",
     "scikit-learn>=1.5.2",
     "seaborn>=0.13.2",
+    "cdsapi>=0.7.7",
+    "cfgrib>=0.9.15.1",
+    "xarray>=2026.2.0",
+    "zarr>=3.1.5",
+    "duckdb>=1.4.4",
 ]
